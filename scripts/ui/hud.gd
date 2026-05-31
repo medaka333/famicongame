@@ -22,6 +22,7 @@ func _ready() -> void:
 	_score_label.text = "SCORE %06d" % GameState.score
 	_hi_label.text = "HI %06d" % GameState.hi_score
 	_lives_label.text = "SHIP x%d" % GameState.lives
+	$DemoLabel.visible = GameState.is_demo
 
 func _on_warning() -> void:
 	_flash("WARNING!!")

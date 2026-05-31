@@ -21,6 +21,7 @@ enum Diff { KIDS, ADULT }
 const MAX_POWER := 2
 
 var difficulty: int = Diff.KIDS
+var is_demo: bool = false
 var score: int = 0
 var hi_score: int = 0
 var lives: int = 3

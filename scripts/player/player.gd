@@ -1,6 +1,6 @@
 extends Area2D
 class_name Player
-## 自機。8方向移動 + オート連射 + 被弾無敵 + 噴射 2 フレームアニメ。
+## 自機（M14）。通常操作 / デモ時は自動操作（左右ゆれ＋常時射撃・被弾無効）。
 
 @export var speed: float = 140.0
 const FIRE_COOLDOWN := [0.18, 0.12, 0.10]
@@ -13,6 +13,7 @@ var _fire_timer: float = 0.0
 var _invincible: bool = false
 var _anim_t: float = 0.0
 var _anim_f: int = 0
+var _demo_t: float = 0.0
 
 func _ready() -> void:
 	add_to_group(Const.G_PLAYER)
@@ -30,12 +31,17 @@ func _ready() -> void:
 	_on_power(GameState.power_level)
 
 func _physics_process(delta: float) -> void:
-	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	position += dir * speed * delta
+	if GameState.is_demo:
+		_demo_t += delta
+		position.x = 128.0 + sin(_demo_t * 1.3) * 90.0
+		position.y = 196.0 + sin(_demo_t * 0.7) * 16.0
+	else:
+		var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		position += dir * speed * delta
 	position = position.clamp(Const.FIELD_MIN, Const.FIELD_MAX)
 
 	_fire_timer -= delta
-	if Input.is_action_pressed("shoot") and _fire_timer <= 0.0:
+	if (GameState.is_demo or Input.is_action_pressed("shoot")) and _fire_timer <= 0.0:
 		_fire_timer = FIRE_COOLDOWN[clampi(GameState.power_level, 0, 2)]
 		_shoot()
 
@@ -68,7 +74,7 @@ func _spawn(container: Node2D, pos: Vector2, vel: Vector2) -> void:
 	b.setup(vel)
 
 func _on_area_entered(area: Area2D) -> void:
-	if _invincible:
+	if _invincible or GameState.is_demo:
 		return
 	if area is EnemyBullet or area is Enemy or area is Boss:
 		_hit()
