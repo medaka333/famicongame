@@ -9,6 +9,7 @@ func _ready() -> void:
 	collision_layer = Const.bit(Const.L_ITEM)
 	collision_mask = Const.bit(Const.L_PLAYER)
 	area_entered.connect(_on_area_entered)
+	$Visual.texture = PixelArt.get_tex("item")
 
 func _physics_process(delta: float) -> void:
 	position.y += SPEED * delta

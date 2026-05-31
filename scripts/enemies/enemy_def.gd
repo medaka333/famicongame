@@ -9,3 +9,4 @@ class_name EnemyDef
 @export_enum("straight", "sine", "homing") var move_pattern: String = "straight"
 @export var fire_interval: float = 0.0   # 0 = 撃たない
 @export var item_drop_chance: float = 0.0
+@export var sprite_name: String = "zako_red"

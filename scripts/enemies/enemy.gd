@@ -24,6 +24,7 @@ func _ready() -> void:
 	_hp = def.max_hp
 	_base_x = position.x
 	_fire_t = def.fire_interval if def.fire_interval > 0.0 else INF
+	$Visual.texture = PixelArt.get_tex(def.sprite_name)
 
 func _physics_process(delta: float) -> void:
 	_t += delta

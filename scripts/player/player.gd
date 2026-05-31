@@ -6,7 +6,7 @@ class_name Player
 const FIRE_COOLDOWN := [0.18, 0.12, 0.10]
 const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
 
-@onready var _visual: Polygon2D = $Visual
+@onready var _visual: Sprite2D = $Visual
 @onready var _muzzle: Marker2D = $Muzzle
 
 var _fire_timer: float = 0.0
@@ -19,6 +19,7 @@ func _ready() -> void:
 		| Const.bit(Const.L_ENEMY_BULLET) \
 		| Const.bit(Const.L_ITEM)
 	area_entered.connect(_on_area_entered)
+	_visual.texture = PixelArt.get_tex("player")
 
 func _physics_process(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")

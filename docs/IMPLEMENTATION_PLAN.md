@@ -808,6 +808,19 @@ famicongame/
 
 完了条件: ザコ後にボスが出現し、HP ゲージを削り切ると STAGE CLEAR が出てタイトルへ戻る。
 
+### M8 ―― ドット絵アセット（1〜2 日）
+仮 Polygon2D を 16×16 ドット絵スプライトに差替。NES パレット縛り。
+
+方式: **コード内ピクセルマップ（文字グリッド）→ Image → ImageTexture** を `PixelArt`(autoload) が生成。外部画像ファイル不要・アセット管理ツール不要。
+
+- [ ] PixelArt autoload: 文字グリッド→テクスチャ生成、NES 風パレット辞書
+- [ ] 自機・ザコ(赤/紫)・自機弾・敵弾・アイテム をドット絵化
+- [ ] 各 .tscn の Visual を Polygon2D → Sprite2D、`_ready` で texture 設定
+- [ ] EnemyDef に `sprite_name`、grunt/shooter で出し分け
+- [ ] （次回）ボス・爆発のドット絵化
+
+完了条件: 主要エンティティが 16×16 等のドット絵で表示され、見た目が NES らしくなる。
+
 ### 将来 ―― 拡張
 - [ ] 複数ステージ（`WaveDef`/`StageDef` データ駆動、ステージ選択/連戦）。
 - [ ] ハイスコア永続保存（`user://` に ConfigFile / JSON）。

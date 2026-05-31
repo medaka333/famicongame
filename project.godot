@@ -26,6 +26,7 @@ GameState="*res://scripts/autoload/game_state.gd"
 AudioManager="*res://scripts/autoload/audio_manager.gd"
 InputManager="*res://scripts/autoload/input_manager.gd"
 BulletPool="*res://scripts/autoload/bullet_pool.gd"
+PixelArt="*res://scripts/autoload/pixel_art.gd"
 
 [display]
 
