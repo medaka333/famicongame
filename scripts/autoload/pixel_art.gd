@@ -2,6 +2,7 @@ extends Node
 ## ドット絵生成（Autoload 名: PixelArt）。§M8
 ## 文字グリッドのピクセルマップから ImageTexture を生成。外部画像ファイル不要。
 ## 文字 = NES 風パレット色。'.' と未定義文字は透明。
+## 左右対称のものは左半分だけ定義し _mirror_h で 2 倍化。
 
 const PAL := {
 	"W": Color8(252, 252, 252),
@@ -95,6 +96,54 @@ const ITEM := [
 	"................",
 ]
 
+# 左半分のみ（16幅）。_mirror_h で 32幅の左右対称ボスになる。
+const BOSS_L := [
+	"................",
+	".......PPP......",
+	"......PPPPP.....",
+	"......PPPPP.....",
+	".....PPPPPPP....",
+	"....PPPPPPPPP...",
+	"...PPPPPPPPPPP..",
+	"..PPPPPPPPPPPPP.",
+	".PPPPPPPPPPPPPPP",
+	".PPPPKKKPPPPPPPP",
+	".PPPKKKKKPPPPOOO",
+	".PPPKKKKKPPPOOYY",
+	".PPPKKKKKPPPOOYY",
+	".PPPKKKKKPPPPOOO",
+	".PPPPPPPPPPPPPPP",
+	"..PPPPPPPPPPPPPP",
+	"...PPPPPPPPPPPPP",
+	"....PPPPP...PPPP",
+	"...PPPP.....PPPP",
+	"..PPPP......PPPP",
+	"..PPP...........",
+	".PP.............",
+	"................",
+	"................",
+]
+
+# 左半分のみ（8幅）。_mirror_h で 16幅の爆発になる。
+const EXPLOSION_L := [
+	"........",
+	"......YY",
+	"...Y.YOO",
+	"....OOOO",
+	"..YOOMMR",
+	".YOOMMMM",
+	"...OOMMM",
+	"....OMMR",
+	"....OMMR",
+	"...OOMMM",
+	".YOOMMMM",
+	"..YOOMMR",
+	"....OOOO",
+	"...Y.YOO",
+	"......YY",
+	"........",
+]
+
 var _cache: Dictionary = {}
 
 func _ready() -> void:
@@ -104,6 +153,8 @@ func _ready() -> void:
 	_cache["pbullet"] = _make(PBULLET)
 	_cache["ebullet"] = _make(EBULLET)
 	_cache["item"] = _make(ITEM)
+	_cache["boss"] = _make(_mirror_h(BOSS_L))
+	_cache["explosion"] = _make(_mirror_h(EXPLOSION_L))
 
 func get_tex(name: String) -> Texture2D:
 	return _cache.get(name)
@@ -113,6 +164,18 @@ func _recolor(rows: Array, from_ch: String, to_ch: String) -> Array:
 	for r in rows:
 		out.append((r as String).replace(from_ch, to_ch))
 	return out
+
+func _mirror_h(rows: Array) -> Array:
+	var out: Array = []
+	for r in rows:
+		out.append((r as String) + _reverse(r))
+	return out
+
+func _reverse(s: String) -> String:
+	var r := ""
+	for i in range(s.length() - 1, -1, -1):
+		r += s[i]
+	return r
 
 func _make(rows: Array) -> ImageTexture:
 	var h := rows.size()

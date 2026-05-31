@@ -16,6 +16,7 @@ var _alive: bool = true
 func _ready() -> void:
 	collision_layer = Const.bit(Const.L_ENEMY)
 	collision_mask = 0
+	$Visual.texture = PixelArt.get_tex("boss")
 	GameState.boss_appeared.emit()
 	GameState.boss_hp_changed.emit(_hp, MAX_HP)
 
