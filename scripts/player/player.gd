@@ -1,15 +1,16 @@
 extends Area2D
 class_name Player
-## 自機（M1）。8 方向移動 + オート連射ショット。§5.3 / §0.5
+## 自機（M2）。8 方向移動 + オート連射 + 被弾→残機減少→無敵点滅。§5.3
 
-@export var speed: float = 140.0          # px/sec（スターソルジャー基準: §0.5）
-const FIRE_COOLDOWN := [0.18, 0.12, 0.10] # 連射間隔 Lv0/Lv1/Lv2（取得で高速化）
+@export var speed: float = 140.0
+const FIRE_COOLDOWN := [0.18, 0.12, 0.10]
 const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
 
+@onready var _visual: Polygon2D = $Visual
 @onready var _muzzle: Marker2D = $Muzzle
-@onready var _bullets: Node2D = get_node("../BulletContainer")
 
 var _fire_timer: float = 0.0
+var _invincible: bool = false
 
 func _ready() -> void:
 	add_to_group(Const.G_PLAYER)
@@ -17,6 +18,7 @@ func _ready() -> void:
 	collision_mask = Const.bit(Const.L_ENEMY) \
 		| Const.bit(Const.L_ENEMY_BULLET) \
 		| Const.bit(Const.L_ITEM)
+	area_entered.connect(_on_area_entered)
 
 func _physics_process(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -29,20 +31,42 @@ func _physics_process(delta: float) -> void:
 		_shoot()
 
 func _shoot() -> void:
+	var bullets: Node2D = get_parent().get_node("BulletContainer")
 	match GameState.power_level:
 		0:
-			_spawn(_muzzle.global_position, Vector2(0, -300))
+			_spawn(bullets, _muzzle.global_position, Vector2(0, -300))
 		1:
-			_spawn(_muzzle.global_position + Vector2(-4, 0), Vector2(0, -300))
-			_spawn(_muzzle.global_position + Vector2(4, 0), Vector2(0, -300))
+			_spawn(bullets, _muzzle.global_position + Vector2(-4, 0), Vector2(0, -300))
+			_spawn(bullets, _muzzle.global_position + Vector2(4, 0), Vector2(0, -300))
 		_:
-			_spawn(_muzzle.global_position, Vector2(0, -300))
-			_spawn(_muzzle.global_position + Vector2(-4, 0), Vector2(-90, -290))
-			_spawn(_muzzle.global_position + Vector2(4, 0), Vector2(90, -290))
+			_spawn(bullets, _muzzle.global_position, Vector2(0, -300))
+			_spawn(bullets, _muzzle.global_position + Vector2(-4, 0), Vector2(-90, -290))
+			_spawn(bullets, _muzzle.global_position + Vector2(4, 0), Vector2(90, -290))
 	AudioManager.play_se("shot")
 
-func _spawn(pos: Vector2, vel: Vector2) -> void:
+func _spawn(container: Node2D, pos: Vector2, vel: Vector2) -> void:
 	var b := BULLET_SCENE.instantiate()
-	_bullets.add_child(b)
+	container.add_child(b)
 	b.global_position = pos
 	b.setup(vel)
+
+func _on_area_entered(area: Area2D) -> void:
+	if _invincible:
+		return
+	if area is EnemyBullet or area is Enemy:
+		_hit()
+
+func _hit() -> void:
+	AudioManager.play_se("miss")
+	GameState.lose_life()
+	if GameState.lives > 0:
+		_start_invincible()
+
+func _start_invincible() -> void:
+	_invincible = true
+	var tw := create_tween().set_loops(15)
+	tw.tween_property(_visual, "modulate:a", 0.1, 0.05)
+	tw.tween_property(_visual, "modulate:a", 1.0, 0.05)
+	await get_tree().create_timer(1.5).timeout
+	_invincible = false
+	_visual.modulate.a = 1.0
