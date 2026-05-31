@@ -1,5 +1,5 @@
 extends Node
-## ウェーブ進行（M10）。stages 配列を順に: ザコ → WARNING → ボス → 次ステージ。§5.7
+## ウェーブ進行（M13）。難易度で ザコ時間・湧き間隔・ボスHP・面数を調整。§5.7
 
 const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 const BOSS_SCENE := preload("res://scenes/enemies/Boss.tscn")
@@ -17,8 +17,11 @@ func _ready() -> void:
 	GameState.boss_defeated.connect(_on_boss_defeated)
 	call_deferred("_start_stage")
 
+func _stage_count() -> int:
+	return mini(stages.size(), GameState.max_stages())
+
 func _start_stage() -> void:
-	if _stage >= stages.size():
+	if _stage >= _stage_count():
 		return
 	var s := stages[_stage]
 	_phase = Phase.ZAKO
@@ -31,18 +34,18 @@ func _start_stage() -> void:
 	AudioManager.play_bgm("stage")
 
 func _process(delta: float) -> void:
-	if _phase != Phase.ZAKO or _stage >= stages.size():
+	if _phase != Phase.ZAKO or _stage >= _stage_count():
 		return
 	var s := stages[_stage]
 	if s.enemy_defs.is_empty():
 		return
 	_elapsed += delta
-	if _elapsed >= s.zako_duration:
+	if _elapsed >= s.zako_duration * GameState.zako_mul():
 		_to_warning()
 		return
 	_spawn_t -= delta
 	if _spawn_t <= 0.0:
-		_spawn_t = s.spawn_interval
+		_spawn_t = s.spawn_interval * GameState.spawn_mul()
 		_spawn_one(s)
 
 func _spawn_one(s: StageDef) -> void:
@@ -64,7 +67,7 @@ func _spawn_boss() -> void:
 	AudioManager.play_bgm("boss")
 	var s := stages[_stage]
 	var boss := BOSS_SCENE.instantiate()
-	boss.setup_hp(s.boss_hp)
+	boss.setup_hp(int(s.boss_hp * GameState.boss_hp_mul()))
 	boss.position = Vector2(128, 40)
 	var c := get_tree().get_first_node_in_group("enemy_container") as Node2D
 	if c:
@@ -72,7 +75,7 @@ func _spawn_boss() -> void:
 
 func _on_boss_defeated() -> void:
 	_stage += 1
-	if _stage >= stages.size():
+	if _stage >= _stage_count():
 		GameState.all_clear.emit()
 	else:
 		GameState.stage_cleared.emit()

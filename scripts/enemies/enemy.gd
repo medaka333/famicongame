@@ -66,7 +66,7 @@ func _fire() -> void:
 	var b := BULLET_SCENE.instantiate()
 	bullets.add_child(b)
 	b.global_position = global_position
-	b.setup(Vector2(0, 140))
+	b.setup(Vector2(0, 140) * GameState.bullet_speed_mul())
 
 func take_damage(amount: int) -> void:
 	_hp -= amount

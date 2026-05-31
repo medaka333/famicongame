@@ -22,6 +22,10 @@ func _ready() -> void:
 		| Const.bit(Const.L_ITEM)
 	area_entered.connect(_on_area_entered)
 	_visual.texture = PixelArt.get_tex("player0")
+	var sh := $CollisionShape2D.shape as RectangleShape2D
+	if sh:
+		var hb := GameState.player_hitbox()
+		sh.size = Vector2(hb, hb)
 
 func _physics_process(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")

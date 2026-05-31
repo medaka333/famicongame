@@ -61,7 +61,7 @@ func _shoot(container: Node2D, vel: Vector2) -> void:
 	var b := BULLET_SCENE.instantiate()
 	container.add_child(b)
 	b.global_position = global_position
-	b.setup(vel)
+	b.setup(vel * GameState.bullet_speed_mul())
 
 func take_damage(amount: int) -> void:
 	if not _alive:

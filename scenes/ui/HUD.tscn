@@ -51,3 +51,11 @@ offset_top = 220.0
 offset_right = 130.0
 offset_bottom = 234.0
 text = "SHIP x3"
+
+[node name="Help" type="Label" parent="."]
+offset_left = 120.0
+offset_top = 220.0
+offset_right = 252.0
+offset_bottom = 234.0
+text = "ARROW  J:SHOT"
+horizontal_alignment = 2

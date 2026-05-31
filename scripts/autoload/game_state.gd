@@ -1,5 +1,5 @@
 extends Node
-## スコア・残機・パワー等のゲーム状態（Autoload 名: GameState）。§5.2
+## スコア・残機・パワー・難易度（Autoload 名: GameState）。§5.2 / §M13
 
 signal score_changed(value: int)
 signal hiscore_changed(value: int)
@@ -16,17 +16,41 @@ signal stage_changed(stage_num: int)
 signal stage_cleared
 signal all_clear
 
-const MAX_POWER := 2
-const START_LIVES := 3
+enum Diff { KIDS, ADULT }
 
+const MAX_POWER := 2
+
+var difficulty: int = Diff.KIDS
 var score: int = 0
 var hi_score: int = 0
-var lives: int = START_LIVES
+var lives: int = 3
 var power_level: int = 0
+
+# --- 難易度パラメータ（KIDS=子供向けにやさしく）---
+func start_lives() -> int:
+	return 5 if difficulty == Diff.KIDS else 3
+
+func bullet_speed_mul() -> float:
+	return 0.6 if difficulty == Diff.KIDS else 1.0
+
+func boss_hp_mul() -> float:
+	return 0.55 if difficulty == Diff.KIDS else 1.0
+
+func spawn_mul() -> float:
+	return 1.3 if difficulty == Diff.KIDS else 1.0
+
+func zako_mul() -> float:
+	return 0.7 if difficulty == Diff.KIDS else 1.0
+
+func player_hitbox() -> float:
+	return 4.0 if difficulty == Diff.KIDS else 8.0
+
+func max_stages() -> int:
+	return 2 if difficulty == Diff.KIDS else 3
 
 func reset_run() -> void:
 	score = 0
-	lives = START_LIVES
+	lives = start_lives()
 	power_level = 0
 	score_changed.emit(score)
 	lives_changed.emit(lives)

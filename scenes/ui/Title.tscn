@@ -12,40 +12,56 @@ color = Color(0.04, 0.05, 0.16, 1)
 
 [node name="TitleLabel" type="Label" parent="."]
 offset_left = 20.0
-offset_top = 80.0
+offset_top = 64.0
 offset_right = 236.0
-offset_bottom = 96.0
+offset_bottom = 80.0
 text = "O-RANGE SHOOTER"
 horizontal_alignment = 1
 
-[node name="SubLabel" type="Label" parent="."]
+[node name="KidsLabel" type="Label" parent="."]
 offset_left = 20.0
-offset_top = 100.0
+offset_top = 104.0
 offset_right = 236.0
-offset_bottom = 114.0
-text = ""
+offset_bottom = 118.0
+text = "KIDS  - EASY -"
 horizontal_alignment = 1
 
-[node name="PressStart" type="Label" parent="."]
+[node name="AdultLabel" type="Label" parent="."]
 offset_left = 20.0
-offset_top = 148.0
+offset_top = 120.0
 offset_right = 236.0
-offset_bottom = 162.0
-text = "PRESS J TO START"
+offset_bottom = 134.0
+text = "ADULT - HARD -"
+horizontal_alignment = 1
+
+[node name="HelpLabel" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 150.0
+offset_right = 236.0
+offset_bottom = 164.0
+text = "ARROW:MOVE   J:SHOT"
 horizontal_alignment = 1
 
 [node name="ConfigLabel" type="Label" parent="."]
 offset_left = 20.0
-offset_top = 174.0
+offset_top = 168.0
 offset_right = 236.0
-offset_bottom = 188.0
+offset_bottom = 182.0
 text = "PRESS C : PAD CONFIG"
+horizontal_alignment = 1
+
+[node name="PressStart" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 188.0
+offset_right = 236.0
+offset_bottom = 202.0
+text = "UP/DOWN:SELECT   J:START"
 horizontal_alignment = 1
 
 [node name="HiScoreLabel" type="Label" parent="."]
 offset_left = 20.0
-offset_top = 200.0
+offset_top = 212.0
 offset_right = 236.0
-offset_bottom = 214.0
+offset_bottom = 226.0
 text = "HI-SCORE  000000"
 horizontal_alignment = 1
