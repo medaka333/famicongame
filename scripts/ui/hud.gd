@@ -16,6 +16,9 @@ func _ready() -> void:
 	GameState.boss_appeared.connect(_on_boss_appeared)
 	GameState.boss_hp_changed.connect(_on_boss_hp)
 	GameState.boss_defeated.connect(_on_boss_defeated)
+	GameState.stage_changed.connect(_on_stage)
+	GameState.stage_cleared.connect(_on_stage_cleared)
+	GameState.all_clear.connect(_on_all_clear)
 	_score_label.text = "SCORE %06d" % GameState.score
 	_hi_label.text = "HI %06d" % GameState.hi_score
 	_lives_label.text = "SHIP x%d" % GameState.lives
@@ -33,7 +36,18 @@ func _on_boss_hp(cur: int, max_hp: int) -> void:
 func _on_boss_defeated() -> void:
 	_boss_bar.hide()
 	_boss_bar_back.hide()
+
+func _on_stage_cleared() -> void:
 	_center.text = "STAGE CLEAR"
+	_center.show()
+
+func _on_stage(n: int) -> void:
+	_flash("STAGE %d" % n)
+
+func _on_all_clear() -> void:
+	_boss_bar.hide()
+	_boss_bar_back.hide()
+	_center.text = "ALL CLEAR!"
 	_center.show()
 
 func _flash(t: String) -> void:

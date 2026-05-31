@@ -828,8 +828,19 @@ famicongame/
 
 完了条件: ハイスコアがゲーム再起動後も残る。
 
+### M10 ―― 複数ステージ（1〜2 日）
+`StageDef` リソースでステージをデータ化。ボス撃破で次ステージ、最終クリアで ALL CLEAR。
+
+- [ ] StageDef: enemy_defs / spawn_interval / zako_duration / boss_hp / bg_color
+- [ ] stage1〜3.tres（難度・背景・ボス HP を段階的に）
+- [ ] WaveDirector: stages 配列、boss_defeated で次ステージ、最後は all_clear
+- [ ] Boss: HP をステージ毎に可変（setup_hp）
+- [ ] HUD: "STAGE n" 表示、最終クリアで "ALL CLEAR!"
+- [ ] 背景色をステージで変更
+
+完了条件: 3 ステージを連戦し、各ボス撃破で次へ、最後に ALL CLEAR → タイトル。
+
 ### 将来 ―― 拡張
-- [ ] 複数ステージ（`WaveDef`/`StageDef` データ駆動、ステージ選択/連戦）。
 - [ ] 追加パワーアップ（オプション子機・ボム・スピード）。
 - [ ] Web エクスポート版公開。
 

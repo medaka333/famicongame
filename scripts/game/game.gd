@@ -14,7 +14,7 @@ func _ready() -> void:
 	$World/FXContainer.add_to_group("fx_container")
 	GameState.reset_run()
 	GameState.game_over.connect(_on_game_over)
-	GameState.boss_defeated.connect(_on_boss_defeated)
+	GameState.all_clear.connect(_on_all_clear)
 	AudioManager.play_bgm()
 
 func add_shake(amount: float) -> void:
@@ -37,7 +37,7 @@ func _on_game_over() -> void:
 	await get_tree().create_timer(1.0).timeout
 	get_tree().change_scene_to_file("res://scenes/ui/GameOver.tscn")
 
-func _on_boss_defeated() -> void:
-	await get_tree().create_timer(4.5).timeout
+func _on_all_clear() -> void:
+	await get_tree().create_timer(5.0).timeout
 	AudioManager.stop_bgm()
 	get_tree().change_scene_to_file("res://scenes/ui/Title.tscn")

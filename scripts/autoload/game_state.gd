@@ -12,6 +12,10 @@ signal boss_appeared
 signal boss_hp_changed(cur: int, max_hp: int)
 signal boss_defeated
 
+signal stage_changed(stage_num: int)
+signal stage_cleared
+signal all_clear
+
 const MAX_POWER := 2
 const START_LIVES := 3
 

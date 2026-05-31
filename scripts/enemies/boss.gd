@@ -1,24 +1,28 @@
 extends Area2D
 class_name Boss
-## ボス（M7）。大型・HP・左右往復・HP でフェーズ遷移する 3 種攻撃。
+## ボス（M10）。HP はステージ毎に可変（setup_hp）。3 種攻撃が HP でフェーズ遷移。
 
-const MAX_HP := 40
 const BULLET_SCENE := preload("res://scenes/bullets/EnemyBullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
 
-var _hp: int = MAX_HP
+var _max_hp: int = 40
+var _hp: int = 40
 var _phase: int = 1
 var _dir: float = 1.0
 var _move_speed: float = 45.0
 var _fire_t: float = 1.0
 var _alive: bool = true
 
+func setup_hp(hp: int) -> void:
+	_max_hp = hp
+	_hp = hp
+
 func _ready() -> void:
 	collision_layer = Const.bit(Const.L_ENEMY)
 	collision_mask = 0
 	$Visual.texture = PixelArt.get_tex("boss")
 	GameState.boss_appeared.emit()
-	GameState.boss_hp_changed.emit(_hp, MAX_HP)
+	GameState.boss_hp_changed.emit(_hp, _max_hp)
 
 func _physics_process(delta: float) -> void:
 	if not _alive:
@@ -63,12 +67,12 @@ func take_damage(amount: int) -> void:
 	if not _alive:
 		return
 	_hp -= amount
-	GameState.boss_hp_changed.emit(maxi(_hp, 0), MAX_HP)
+	GameState.boss_hp_changed.emit(maxi(_hp, 0), _max_hp)
 	get_tree().call_group("game", "add_shake", 0.05)
-	if _hp <= MAX_HP * 2 / 3 and _phase < 2:
+	if _hp <= _max_hp * 2 / 3 and _phase < 2:
 		_phase = 2
 		_move_speed = 65.0
-	if _hp <= MAX_HP / 3 and _phase < 3:
+	if _hp <= _max_hp / 3 and _phase < 3:
 		_phase = 3
 		_move_speed = 90.0
 	if _hp <= 0:

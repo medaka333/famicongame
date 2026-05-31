@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StageDef" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/stage/stage_def.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemy_defs/grunt.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/enemy_defs/shooter.tres" id="3"]
+
+[resource]
+script = ExtResource("1")
+enemy_defs = Array[ExtResource("2")]([ExtResource("2"), ExtResource("3")])
+spawn_interval = 1.1
+zako_duration = 14.0
+boss_hp = 45
+bg_color = Color(0.02, 0.08, 0.06, 1)
