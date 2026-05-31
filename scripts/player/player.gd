@@ -31,7 +31,9 @@ func _physics_process(delta: float) -> void:
 		_shoot()
 
 func _shoot() -> void:
-	var bullets: Node2D = get_parent().get_node("BulletContainer")
+	var bullets := get_tree().get_first_node_in_group("bullet_container") as Node2D
+	if bullets == null:
+		return
 	match GameState.power_level:
 		0:
 			_spawn(bullets, _muzzle.global_position, Vector2(0, -300))
@@ -58,6 +60,7 @@ func _on_area_entered(area: Area2D) -> void:
 
 func _hit() -> void:
 	AudioManager.play_se("miss")
+	get_tree().call_group("game", "add_shake", 0.5)
 	GameState.lose_life()
 	if GameState.lives > 0:
 		_start_invincible()

@@ -56,13 +56,17 @@ func take_damage(amount: int) -> void:
 		_die()
 
 func _fire() -> void:
+	var bullets := get_tree().get_first_node_in_group("bullet_container") as Node2D
+	if bullets == null:
+		return
 	var b := BULLET_SCENE.instantiate()
-	get_parent().get_parent().get_node("BulletContainer").add_child(b)
+	bullets.add_child(b)
 	b.global_position = global_position
 	b.setup(Vector2(0, 140))
 
 func _die() -> void:
 	GameState.add_score(def.score)
+	get_tree().call_group("game", "add_shake", 0.15)
 	var fx_container := get_tree().get_first_node_in_group("fx_container")
 	if fx_container:
 		var fx := EXPLOSION_SCENE.instantiate()

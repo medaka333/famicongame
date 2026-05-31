@@ -20,4 +20,6 @@ func _spawn_one() -> void:
 	var d: EnemyDef = enemy_defs.pick_random()
 	var e: Enemy = ENEMY_SCENE.instantiate()
 	e.setup(d, Vector2(randf_range(16.0, 240.0), -16.0))
-	get_parent().get_node("EnemyContainer").add_child(e)
+	var c := get_tree().get_first_node_in_group("enemy_container") as Node2D
+	if c:
+		c.add_child(e)

@@ -1,16 +1,37 @@
 extends Node2D
-## プレイ画面ルート（M3）。
+## プレイ画面ルート（M5）。背景・スクリーンシェイク・BGM・ポーズ。
+
+@onready var _world: Node2D = $World
+
+var _trauma: float = 0.0
 
 func _ready() -> void:
-	$FXContainer.add_to_group("fx_container")
-	$ItemContainer.add_to_group("item_container")
+	process_mode = Node.PROCESS_MODE_ALWAYS   # pause 中も入力/解除を受ける
+	add_to_group("game")
+	$World/EnemyContainer.add_to_group("enemy_container")
+	$World/BulletContainer.add_to_group("bullet_container")
+	$World/ItemContainer.add_to_group("item_container")
+	$World/FXContainer.add_to_group("fx_container")
 	GameState.reset_run()
 	GameState.game_over.connect(_on_game_over)
+	AudioManager.play_bgm()
+
+func add_shake(amount: float) -> void:
+	_trauma = minf(_trauma + amount, 1.0)
+
+func _process(delta: float) -> void:
+	if _trauma > 0.0:
+		_trauma = maxf(_trauma - delta * 1.5, 0.0)
+		var amt := _trauma * _trauma * 4.0
+		_world.position = Vector2(randf_range(-amt, amt), randf_range(-amt, amt))
+	elif _world.position != Vector2.ZERO:
+		_world.position = Vector2.ZERO
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		get_tree().paused = not get_tree().paused
 
 func _on_game_over() -> void:
+	AudioManager.stop_bgm()
 	await get_tree().create_timer(1.0).timeout
 	get_tree().change_scene_to_file("res://scenes/ui/GameOver.tscn")
