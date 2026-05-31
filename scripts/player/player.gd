@@ -26,6 +26,8 @@ func _ready() -> void:
 	if sh:
 		var hb := GameState.player_hitbox()
 		sh.size = Vector2(hb, hb)
+	GameState.power_changed.connect(_on_power)
+	_on_power(GameState.power_level)
 
 func _physics_process(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -90,3 +92,12 @@ func _start_invincible() -> void:
 	await get_tree().create_timer(1.5).timeout
 	_invincible = false
 	_visual.modulate.a = 1.0
+
+func _on_power(lv: int) -> void:
+	match lv:
+		0:
+			_visual.self_modulate = Color(1, 1, 1)
+		1:
+			_visual.self_modulate = Color(1, 1, 0.6)
+		_:
+			_visual.self_modulate = Color(1, 0.7, 0.7)

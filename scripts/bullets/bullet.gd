@@ -11,7 +11,8 @@ func _ready() -> void:
 	collision_layer = Const.bit(Const.L_PLAYER_BULLET)
 	collision_mask = Const.bit(Const.L_ENEMY)
 	area_entered.connect(_on_area_entered)
-	$Visual.texture = PixelArt.get_tex("pbullet")
+	var tex := "pbullet2" if GameState.power_level >= 2 else "pbullet"
+	$Visual.texture = PixelArt.get_tex(tex)
 
 func _physics_process(delta: float) -> void:
 	position += velocity * delta

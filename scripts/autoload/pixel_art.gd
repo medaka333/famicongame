@@ -1,7 +1,7 @@
 extends Node
-## ドット絵生成（Autoload 名: PixelArt）。§M8 / §M12
+## ドット絵生成（Autoload 名: PixelArt）。§M8 / §M12 / §M14
 ## 文字グリッド → ImageTexture。外部画像不要。'.' と未定義文字は透明。
-## アニメは <base>0 / <base>1 の 2 フレーム（player, zako_red, zako_purple）。
+## アニメは <base>0 / <base>1 の 2 フレーム、爆発は exp0..2。
 
 const PAL := {
 	"W": Color8(252, 252, 252),
@@ -16,171 +16,74 @@ const PAL := {
 	"K": Color8(60, 60, 60),
 }
 
-# 自機 フレーム0（噴射 長）
 const PLAYER0 := [
-	"................",
-	"................",
-	".......WW.......",
-	"......WCCW......",
-	"......WCCW......",
-	".....WCCCCW.....",
-	".....WCCCCW.....",
-	"....WCCCCCCW....",
-	"....WCCBBCCW....",
-	"...WCCCBBCCCW...",
-	"..WWCCCBBCCCWW..",
-	".WW.WCCCCCCW.WW.",
-	"WW..RRWCCWRR..WW",
-	"....RRR..RRR....",
-	".....RR..RR.....",
-	"......R..R......",
+	"................", "................", ".......WW.......", "......WCCW......",
+	"......WCCW......", ".....WCCCCW.....", ".....WCCCCW.....", "....WCCCCCCW....",
+	"....WCCBBCCW....", "...WCCCBBCCCW...", "..WWCCCBBCCCWW..", ".WW.WCCCCCCW.WW.",
+	"WW..RRWCCWRR..WW", "....RRR..RRR....", ".....RR..RR.....", "......R..R......",
 ]
-
-# 自機 フレーム1（噴射 短）
 const PLAYER1 := [
-	"................",
-	"................",
-	".......WW.......",
-	"......WCCW......",
-	"......WCCW......",
-	".....WCCCCW.....",
-	".....WCCCCW.....",
-	"....WCCCCCCW....",
-	"....WCCBBCCW....",
-	"...WCCCBBCCCW...",
-	"..WWCCCBBCCCWW..",
-	".WW.WCCCCCCW.WW.",
-	"WW..RYWCCWYR..WW",
-	"....RR....RR....",
-	".....R....R.....",
-	"................",
+	"................", "................", ".......WW.......", "......WCCW......",
+	"......WCCW......", ".....WCCCCW.....", ".....WCCCCW.....", "....WCCCCCCW....",
+	"....WCCBBCCW....", "...WCCCBBCCCW...", "..WWCCCBBCCCWW..", ".WW.WCCCCCCW.WW.",
+	"WW..RYWCCWYR..WW", "....RR....RR....", ".....R....R.....", "................",
 ]
-
-# ザコ フレーム0
 const ZAKO0 := [
-	"................",
-	"..R..........R..",
-	"..RR........RR..",
-	"...RR.RRRR.RR...",
-	"...RRRRRRRRRR...",
-	"..RRRWWRRWWRRR..",
-	"..RRRWWRRWWRRR..",
-	"..RRRRRRRRRRRR..",
-	"..RRRRRRRRRRRR..",
-	"...RRRRRRRRRR...",
-	"...RR.RRRR.RR...",
-	"..RR..R..R..RR..",
-	"..R...R..R...R..",
-	"......R..R......",
-	"................",
-	"................",
+	"................", "..R..........R..", "..RR........RR..", "...RR.RRRR.RR...",
+	"...RRRRRRRRRR...", "..RRRWWRRWWRRR..", "..RRRWWRRWWRRR..", "..RRRRRRRRRRRR..",
+	"..RRRRRRRRRRRR..", "...RRRRRRRRRR...", "...RR.RRRR.RR...", "..RR..R..R..RR..",
+	"..R...R..R...R..", "......R..R......", "................", "................",
 ]
-
-# ザコ フレーム1（脚・触角が動く）
 const ZAKO1 := [
-	"................",
-	"...R........R...",
-	"..RR........RR..",
-	"...RR.RRRR.RR...",
-	"...RRRRRRRRRR...",
-	"..RRRWWRRWWRRR..",
-	"..RRRWWRRWWRRR..",
-	"..RRRRRRRRRRRR..",
-	"..RRRRRRRRRRRR..",
-	"...RRRRRRRRRR...",
-	"..RR..RRRR..RR..",
-	".RR...R..R...RR.",
-	".R....R..R....R.",
-	".....RR..RR.....",
-	"................",
-	"................",
+	"................", "...R........R...", "..RR........RR..", "...RR.RRRR.RR...",
+	"...RRRRRRRRRR...", "..RRRWWRRWWRRR..", "..RRRWWRRWWRRR..", "..RRRRRRRRRRRR..",
+	"..RRRRRRRRRRRR..", "...RRRRRRRRRR...", "..RR..RRRR..RR..", ".RR...R..R...RR.",
+	".R....R..R....R.", ".....RR..RR.....", "................", "................",
 ]
 
 const PBULLET := [
-	"........",
-	"...WW...",
-	"..WYYW..",
-	"..WYYW..",
-	"..WYYW..",
-	"..WYYW..",
-	"...YY...",
-	"...YY...",
+	"........", "...WW...", "..WYYW..", "..WYYW..",
+	"..WYYW..", "..WYYW..", "...YY...", "...YY...",
 ]
-
+# Lv2 強化弾（大きく明るい）
+const PBULLET2 := [
+	"...WW...", "..WWWW..", ".WWYYWW.", ".WYYYYW.",
+	".WYYYYW.", ".WWYYWW.", "..WWWW..", "...WW...",
+]
 const EBULLET := [
-	"........",
-	"..OOOO..",
-	".OOMMOO.",
-	".OMMMMO.",
-	".OMMMMO.",
-	".OOMMOO.",
-	"..OOOO..",
-	"........",
+	"........", "..OOOO..", ".OOMMOO.", ".OMMMMO.",
+	".OMMMMO.", ".OOMMOO.", "..OOOO..", "........",
 ]
-
 const ITEM := [
-	"................",
-	"....GGGGGGGG....",
-	"...GGGGGGGGGG...",
-	"..GGWWWWWWWWGG..",
-	"..GGWWGGGGWWGG..",
-	"..GGWWGGGGWWGG..",
-	"..GGWWWWWWWGGG..",
-	"..GGWWGGGGGGGG..",
-	"..GGWWGGGGGGGG..",
-	"..GGWWGGGGGGGG..",
-	"...GGGGGGGGGG...",
-	"....GGGGGGGG....",
-	"................",
-	"................",
-	"................",
-	"................",
+	"................", "....GGGGGGGG....", "...GGGGGGGGGG...", "..GGWWWWWWWWGG..",
+	"..GGWWGGGGWWGG..", "..GGWWGGGGWWGG..", "..GGWWWWWWWGGG..", "..GGWWGGGGGGGG..",
+	"..GGWWGGGGGGGG..", "..GGWWGGGGGGGG..", "...GGGGGGGGGG...", "....GGGGGGGG....",
+	"................", "................", "................", "................",
 ]
-
 const BOSS_L := [
-	"................",
-	".......PPP......",
-	"......PPPPP.....",
-	"......PPPPP.....",
-	".....PPPPPPP....",
-	"....PPPPPPPPP...",
-	"...PPPPPPPPPPP..",
-	"..PPPPPPPPPPPPP.",
-	".PPPPPPPPPPPPPPP",
-	".PPPPKKKPPPPPPPP",
-	".PPPKKKKKPPPPOOO",
-	".PPPKKKKKPPPOOYY",
-	".PPPKKKKKPPPOOYY",
-	".PPPKKKKKPPPPOOO",
-	".PPPPPPPPPPPPPPP",
-	"..PPPPPPPPPPPPPP",
-	"...PPPPPPPPPPPPP",
-	"....PPPPP...PPPP",
-	"...PPPP.....PPPP",
-	"..PPPP......PPPP",
-	"..PPP...........",
-	".PP.............",
-	"................",
-	"................",
+	"................", ".......PPP......", "......PPPPP.....", "......PPPPP.....",
+	".....PPPPPPP....", "....PPPPPPPPP...", "...PPPPPPPPPPP..", "..PPPPPPPPPPPPP.",
+	".PPPPPPPPPPPPPPP", ".PPPPKKKPPPPPPPP", ".PPPKKKKKPPPPOOO", ".PPPKKKKKPPPOOYY",
+	".PPPKKKKKPPPOOYY", ".PPPKKKKKPPPPOOO", ".PPPPPPPPPPPPPPP", "..PPPPPPPPPPPPPP",
+	"...PPPPPPPPPPPPP", "....PPPPP...PPPP", "...PPPP.....PPPP", "..PPPP......PPPP",
+	"..PPP...........", ".PP.............", "................", "................",
 ]
 
-const EXPLOSION_L := [
-	"........",
-	"......YY",
-	"...Y.YOO",
-	"....OOOO",
-	"..YOOMMR",
-	".YOOMMMM",
-	"...OOMMM",
-	"....OMMR",
-	"....OMMR",
-	"...OOMMM",
-	".YOOMMMM",
-	"..YOOMMR",
-	"....OOOO",
-	"...Y.YOO",
-	"......YY",
-	"........",
+# 爆発 3 フレーム（左半分8幅 → mirror で16幅）
+const EXP0_L := [
+	"........", "........", "........", "........", "........", "......YY",
+	".....YOO", ".....OOM", ".....OOM", ".....YOO", "......YY", "........",
+	"........", "........", "........", "........",
+]
+const EXP1_L := [
+	"........", "........", "......YY", ".....YOO", "....YOOM", "...YOOMM",
+	"...OOMMM", "...OMMMM", "...OMMMM", "...OOMMM", "...YOOMM", "....YOOM",
+	".....YOO", "......YY", "........", "........",
+]
+const EXP2_L := [
+	"Y.......", "..Y...OY", "....OO..", "...OM..Y", "..OM....", "....M...",
+	"...M..O.", ".....OM.", "..O...M.", ".O..OM..", "....M...", "...O...Y",
+	"..Y..O..", ".....M.Y", "Y...Y...", "........",
 ]
 
 var _cache: Dictionary = {}
@@ -193,10 +96,13 @@ func _ready() -> void:
 	_cache["zako_purple0"] = _make(_recolor(ZAKO0, "R", "P"))
 	_cache["zako_purple1"] = _make(_recolor(ZAKO1, "R", "P"))
 	_cache["pbullet"] = _make(PBULLET)
+	_cache["pbullet2"] = _make(PBULLET2)
 	_cache["ebullet"] = _make(EBULLET)
 	_cache["item"] = _make(ITEM)
 	_cache["boss"] = _make(_mirror_h(BOSS_L))
-	_cache["explosion"] = _make(_mirror_h(EXPLOSION_L))
+	_cache["exp0"] = _make(_mirror_h(EXP0_L))
+	_cache["exp1"] = _make(_mirror_h(EXP1_L))
+	_cache["exp2"] = _make(_mirror_h(EXP2_L))
 
 func get_tex(name: String) -> Texture2D:
 	return _cache.get(name)
