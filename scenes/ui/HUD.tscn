@@ -20,6 +20,31 @@ offset_bottom = 14.0
 text = "HI 000000"
 horizontal_alignment = 2
 
+[node name="BossBarBack" type="ColorRect" parent="."]
+visible = false
+offset_left = 8.0
+offset_top = 18.0
+offset_right = 248.0
+offset_bottom = 22.0
+color = Color(0.3, 0.05, 0.05, 1)
+
+[node name="BossBar" type="ColorRect" parent="."]
+visible = false
+offset_left = 8.0
+offset_top = 18.0
+offset_right = 248.0
+offset_bottom = 22.0
+color = Color(0.95, 0.2, 0.2, 1)
+
+[node name="CenterMsg" type="Label" parent="."]
+visible = false
+offset_left = 20.0
+offset_top = 104.0
+offset_right = 236.0
+offset_bottom = 120.0
+text = ""
+horizontal_alignment = 1
+
 [node name="Lives" type="Label" parent="."]
 offset_left = 4.0
 offset_top = 220.0

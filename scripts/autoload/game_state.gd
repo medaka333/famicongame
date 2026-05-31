@@ -7,6 +7,11 @@ signal lives_changed(value: int)
 signal power_changed(value: int)
 signal game_over
 
+signal boss_warning
+signal boss_appeared
+signal boss_hp_changed(cur: int, max_hp: int)
+signal boss_defeated
+
 const MAX_POWER := 2
 const START_LIVES := 3
 
@@ -35,6 +40,8 @@ func add_power() -> void:
 	power_changed.emit(power_level)
 
 func lose_life() -> void:
+	if lives <= 0:
+		return
 	lives -= 1
 	lives_changed.emit(lives)
 	if lives <= 0:

@@ -13,5 +13,6 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	position += velocity * delta
-	if position.y > 256.0 or position.y < -16.0:
+	if position.y > 256.0 or position.y < -16.0 \
+		or position.x < -16.0 or position.x > 272.0:
 		queue_free()

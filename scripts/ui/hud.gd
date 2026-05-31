@@ -1,14 +1,44 @@
 extends CanvasLayer
-## HUD（M3）。スコア・ハイスコア・残機を GameState シグナルで更新。§5.9
+## HUD（M7）。スコア・残機 ＋ ボス HP ゲージ・WARNING/STAGE CLEAR 表示。§5.9
 
 @onready var _score_label: Label = $Score
 @onready var _hi_label: Label = $HiScore
 @onready var _lives_label: Label = $Lives
+@onready var _boss_bar: ColorRect = $BossBar
+@onready var _boss_bar_back: ColorRect = $BossBarBack
+@onready var _center: Label = $CenterMsg
 
 func _ready() -> void:
 	GameState.score_changed.connect(func(v): _score_label.text = "SCORE %06d" % v)
 	GameState.hiscore_changed.connect(func(v): _hi_label.text = "HI %06d" % v)
 	GameState.lives_changed.connect(func(v): _lives_label.text = "SHIP x%d" % v)
+	GameState.boss_warning.connect(_on_warning)
+	GameState.boss_appeared.connect(_on_boss_appeared)
+	GameState.boss_hp_changed.connect(_on_boss_hp)
+	GameState.boss_defeated.connect(_on_boss_defeated)
 	_score_label.text = "SCORE %06d" % GameState.score
-	_hi_label.text   = "HI %06d" % GameState.hi_score
+	_hi_label.text = "HI %06d" % GameState.hi_score
 	_lives_label.text = "SHIP x%d" % GameState.lives
+
+func _on_warning() -> void:
+	_flash("WARNING!!")
+
+func _on_boss_appeared() -> void:
+	_boss_bar_back.show()
+	_boss_bar.show()
+
+func _on_boss_hp(cur: int, max_hp: int) -> void:
+	_boss_bar.size.x = 240.0 * float(cur) / float(max_hp)
+
+func _on_boss_defeated() -> void:
+	_boss_bar.hide()
+	_boss_bar_back.hide()
+	_center.text = "STAGE CLEAR"
+	_center.show()
+
+func _flash(t: String) -> void:
+	_center.text = t
+	_center.show()
+	await get_tree().create_timer(2.2).timeout
+	if _center.text == t:
+		_center.hide()

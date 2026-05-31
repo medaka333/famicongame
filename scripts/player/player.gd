@@ -64,6 +64,10 @@ func _hit() -> void:
 	GameState.lose_life()
 	if GameState.lives > 0:
 		_start_invincible()
+	else:
+		hide()
+		set_physics_process(false)
+		set_deferred("monitoring", false)
 
 func _start_invincible() -> void:
 	_invincible = true
