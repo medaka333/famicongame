@@ -840,6 +840,16 @@ famicongame/
 
 完了条件: 3 ステージを連戦し、各ボス撃破で次へ、最後に ALL CLEAR → タイトル。
 
+### M11 ―― 配布（Windows exe）（半日）
+- [ ] Project > Export で「Windows Desktop」プリセット追加
+- [ ] Export Templates を DL（初回のみ・エディタが促す・バージョン一致）
+- [ ] Embed PCK を有効化（単一 exe で配布）
+- [ ] `build/famicongame.exe` を書き出し
+- [ ] exe 単体起動を確認 → zip で配布
+- [ ]（任意）`config/version`、Windows 用 `.ico` アイコン
+
+完了条件: ダブルクリックで起動する `.exe` ができる。
+
 ### 将来 ―― 拡張
 - [ ] 追加パワーアップ（オプション子機・ボム・スピード）。
 - [ ] Web エクスポート版公開。
