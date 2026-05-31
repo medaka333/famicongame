@@ -17,6 +17,8 @@ color = Color(0.04, 0.05, 0.16, 1)
 
 [node name="BulletContainer" type="Node2D" parent="."]
 
+[node name="ItemContainer" type="Node2D" parent="."]
+
 [node name="FXContainer" type="Node2D" parent="."]
 
 [node name="Player" parent="." instance=ExtResource("2")]

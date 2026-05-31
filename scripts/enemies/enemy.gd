@@ -11,6 +11,7 @@ var _fire_t: float = 0.0
 
 const BULLET_SCENE := preload("res://scenes/bullets/EnemyBullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
+const POWERUP_SCENE := preload("res://scenes/items/PowerUp.tscn")
 
 func setup(d: EnemyDef, pos: Vector2) -> void:
 	def = d
@@ -67,5 +68,11 @@ func _die() -> void:
 		var fx := EXPLOSION_SCENE.instantiate()
 		fx_container.add_child(fx)
 		fx.global_position = global_position
+	if randf() < def.item_drop_chance:
+		var item_container := get_tree().get_first_node_in_group("item_container") as Node2D
+		if item_container:
+			var item := POWERUP_SCENE.instantiate()
+			item_container.add_child(item)
+			item.global_position = global_position
 	AudioManager.play_se("explosion")
 	queue_free()

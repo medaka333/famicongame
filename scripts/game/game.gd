@@ -3,6 +3,7 @@ extends Node2D
 
 func _ready() -> void:
 	$FXContainer.add_to_group("fx_container")
+	$ItemContainer.add_to_group("item_container")
 	GameState.reset_run()
 	GameState.game_over.connect(_on_game_over)
 

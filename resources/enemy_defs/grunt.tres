@@ -10,4 +10,4 @@ speed = 50.0
 score = 100
 move_pattern = "straight"
 fire_interval = 0.0
-item_drop_chance = 0.0
+item_drop_chance = 0.15
