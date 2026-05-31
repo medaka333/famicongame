@@ -46,3 +46,22 @@ func lose_life() -> void:
 	lives_changed.emit(lives)
 	if lives <= 0:
 		game_over.emit()
+
+# --- ハイスコア永続保存（§M9）---
+
+const SAVE_PATH := "user://save.cfg"
+
+func _ready() -> void:
+	_load()
+	game_over.connect(_save)
+	boss_defeated.connect(_save)
+
+func _load() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(SAVE_PATH) == OK:
+		hi_score = int(cfg.get_value("score", "hi", 0))
+
+func _save() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("score", "hi", hi_score)
+	cfg.save(SAVE_PATH)
