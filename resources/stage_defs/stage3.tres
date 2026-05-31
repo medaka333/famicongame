@@ -11,3 +11,4 @@ spawn_interval = 0.85
 zako_duration = 16.0
 boss_hp = 60
 bg_color = Color(0.10, 0.02, 0.04, 1)
+boss_sprite = "boss3"

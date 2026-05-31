@@ -67,7 +67,7 @@ func _spawn_boss() -> void:
 	AudioManager.play_bgm("boss")
 	var s := stages[_stage]
 	var boss := BOSS_SCENE.instantiate()
-	boss.setup_hp(int(s.boss_hp * GameState.boss_hp_mul()))
+	boss.setup(int(s.boss_hp * GameState.boss_hp_mul()), s.boss_sprite)
 	boss.position = Vector2(128, 40)
 	var c := get_tree().get_first_node_in_group("enemy_container") as Node2D
 	if c:

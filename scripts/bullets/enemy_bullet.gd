@@ -10,6 +10,7 @@ func setup(vel: Vector2) -> void:
 func _ready() -> void:
 	collision_layer = Const.bit(Const.L_ENEMY_BULLET)
 	collision_mask = Const.bit(Const.L_PLAYER)
+	add_to_group("enemy_bullet")
 	$Visual.texture = PixelArt.get_tex("ebullet")
 
 func _physics_process(delta: float) -> void:

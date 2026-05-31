@@ -7,64 +7,64 @@ script = ExtResource("1")
 
 [node name="Score" type="Label" parent="."]
 offset_left = 4.0
-offset_top = 2.0
-offset_right = 130.0
-offset_bottom = 14.0
-text = "SCORE 000000"
+offset_top = 0.0
+offset_right = 180.0
+offset_bottom = 18.0
+text = "スコア 000000"
 
 [node name="HiScore" type="Label" parent="."]
-offset_left = 130.0
-offset_top = 2.0
-offset_right = 252.0
-offset_bottom = 14.0
-text = "HI 000000"
-horizontal_alignment = 2
+visible = false
+offset_left = 4.0
+offset_top = 18.0
+offset_right = 200.0
+offset_bottom = 34.0
+text = "ハイスコア 000000"
 
 [node name="BossBarBack" type="ColorRect" parent="."]
 visible = false
 offset_left = 8.0
-offset_top = 18.0
+offset_top = 20.0
 offset_right = 248.0
-offset_bottom = 22.0
+offset_bottom = 24.0
 color = Color(0.3, 0.05, 0.05, 1)
 
 [node name="BossBar" type="ColorRect" parent="."]
 visible = false
 offset_left = 8.0
-offset_top = 18.0
+offset_top = 20.0
 offset_right = 248.0
-offset_bottom = 22.0
+offset_bottom = 24.0
 color = Color(0.95, 0.2, 0.2, 1)
 
 [node name="CenterMsg" type="Label" parent="."]
 visible = false
-offset_left = 20.0
-offset_top = 104.0
-offset_right = 236.0
-offset_bottom = 120.0
+offset_left = 8.0
+offset_top = 100.0
+offset_right = 248.0
+offset_bottom = 118.0
 text = ""
 horizontal_alignment = 1
 
 [node name="Lives" type="Label" parent="."]
 offset_left = 4.0
 offset_top = 220.0
-offset_right = 130.0
-offset_bottom = 234.0
-text = "SHIP x3"
+offset_right = 110.0
+offset_bottom = 238.0
+text = "残機 3"
 
 [node name="Help" type="Label" parent="."]
-offset_left = 120.0
+offset_left = 110.0
 offset_top = 220.0
-offset_right = 252.0
-offset_bottom = 234.0
-text = "やじるし　J：ショット"
+offset_right = 254.0
+offset_bottom = 238.0
+text = "移動 J：ショット"
 horizontal_alignment = 2
 
 [node name="DemoLabel" type="Label" parent="."]
 visible = false
-offset_left = 20.0
-offset_top = 38.0
-offset_right = 236.0
-offset_bottom = 52.0
+offset_left = 8.0
+offset_top = 52.0
+offset_right = 248.0
+offset_bottom = 70.0
 text = "－ デモ －"
 horizontal_alignment = 1

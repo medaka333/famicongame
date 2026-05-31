@@ -1,7 +1,6 @@
 extends Node
-## ドット絵生成（Autoload 名: PixelArt）。§M8 / §M12 / §M14
+## ドット絵生成（Autoload 名: PixelArt）。§M8 / §M12 / §M14 / §M15
 ## 文字グリッド → ImageTexture。外部画像不要。'.' と未定義文字は透明。
-## アニメは <base>0 / <base>1 の 2 フレーム、爆発は exp0..2。
 
 const PAL := {
 	"W": Color8(252, 252, 252),
@@ -40,19 +39,14 @@ const ZAKO1 := [
 	"..RRRRRRRRRRRR..", "...RRRRRRRRRR...", "..RR..RRRR..RR..", ".RR...R..R...RR.",
 	".R....R..R....R.", ".....RR..RR.....", "................", "................",
 ]
-
 const PBULLET := [
-	"........", "...WW...", "..WYYW..", "..WYYW..",
-	"..WYYW..", "..WYYW..", "...YY...", "...YY...",
+	"........", "...WW...", "..WYYW..", "..WYYW..", "..WYYW..", "..WYYW..", "...YY...", "...YY...",
 ]
-# Lv2 強化弾（大きく明るい）
 const PBULLET2 := [
-	"...WW...", "..WWWW..", ".WWYYWW.", ".WYYYYW.",
-	".WYYYYW.", ".WWYYWW.", "..WWWW..", "...WW...",
+	"...WW...", "..WWWW..", ".WWYYWW.", ".WYYYYW.", ".WYYYYW.", ".WWYYWW.", "..WWWW..", "...WW...",
 ]
 const EBULLET := [
-	"........", "..OOOO..", ".OOMMOO.", ".OMMMMO.",
-	".OMMMMO.", ".OOMMOO.", "..OOOO..", "........",
+	"........", "..OOOO..", ".OOMMOO.", ".OMMMMO.", ".OMMMMO.", ".OOMMOO.", "..OOOO..", "........",
 ]
 const ITEM := [
 	"................", "....GGGGGGGG....", "...GGGGGGGGGG...", "..GGWWWWWWWWGG..",
@@ -60,7 +54,9 @@ const ITEM := [
 	"..GGWWGGGGGGGG..", "..GGWWGGGGGGGG..", "...GGGGGGGGGG...", "....GGGGGGGG....",
 	"................", "................", "................", "................",
 ]
-const BOSS_L := [
+
+# ボス（左半分16幅 → mirror で32幅）
+const BOSS1_L := [
 	"................", ".......PPP......", "......PPPPP.....", "......PPPPP.....",
 	".....PPPPPPP....", "....PPPPPPPPP...", "...PPPPPPPPPPP..", "..PPPPPPPPPPPPP.",
 	".PPPPPPPPPPPPPPP", ".PPPPKKKPPPPPPPP", ".PPPKKKKKPPPPOOO", ".PPPKKKKKPPPOOYY",
@@ -68,8 +64,23 @@ const BOSS_L := [
 	"...PPPPPPPPPPPPP", "....PPPPP...PPPP", "...PPPP.....PPPP", "..PPPP......PPPP",
 	"..PPP...........", ".PP.............", "................", "................",
 ]
+const BOSS2_L := [
+	"................", "...........BBB..", "..........BBBBB.", ".........BBBBBBB",
+	"........BBBBBBBB", ".......BBBBBBBBB", "......BBBCCCCBBB", ".....BBCCCCCCCBB",
+	".....BBCCWWWWCCB", ".....BBCCWGGWCCB", ".....BBCCWWWWCCB", "......BBBCCCCBBB",
+	".......BBBBBBBBB", "........BBBBBBBB", ".........BBBBBBB", "........BBBKKBBB",
+	".......BBB..BBBB", "......BBB....BBB", ".....BBB......BB", "....BBB.......BB",
+	"...BB...........", "..BB............", "................", "................",
+]
+const BOSS3_L := [
+	"................", ".....RRRRRR.....", "....RRRRRRRR....", "...RRMMMMMMRR...",
+	"..RRMMOOOOMMRR..", ".RRMMOOOOOOMMRR.", ".RMMOOYYYYOOMMR.", "RRMMOOYWWYOOMMRR",
+	"RMMOOOYWWYOOOMMR", "RMMOOOYWWYOOOMMR", "RRMMOOYWWYOOMMRR", ".RMMOOYYYYOOMMR.",
+	".RRMMOOOOOOMMRR.", "..RRMMOOOOMMRR..", "...RRMMMMMMRR...", "...RRRRRRRRRR...",
+	"..RRR.RRRR.RRR..", ".RRR...RR...RRR.", ".RR....RR....RR.", "RR.....RR.....RR",
+	"R......RR......R", ".......RR.......", "................", "................",
+]
 
-# 爆発 3 フレーム（左半分8幅 → mirror で16幅）
 const EXP0_L := [
 	"........", "........", "........", "........", "........", "......YY",
 	".....YOO", ".....OOM", ".....OOM", ".....YOO", "......YY", "........",
@@ -99,7 +110,9 @@ func _ready() -> void:
 	_cache["pbullet2"] = _make(PBULLET2)
 	_cache["ebullet"] = _make(EBULLET)
 	_cache["item"] = _make(ITEM)
-	_cache["boss"] = _make(_mirror_h(BOSS_L))
+	_cache["boss1"] = _make(_mirror_h(BOSS1_L))
+	_cache["boss2"] = _make(_mirror_h(BOSS2_L))
+	_cache["boss3"] = _make(_mirror_h(BOSS3_L))
 	_cache["exp0"] = _make(_mirror_h(EXP0_L))
 	_cache["exp1"] = _make(_mirror_h(EXP1_L))
 	_cache["exp2"] = _make(_mirror_h(EXP2_L))

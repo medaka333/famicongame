@@ -38,6 +38,11 @@ window/size/window_height_override=960
 window/stretch/mode="viewport"
 window/stretch/scale_mode="integer"
 
+[gui]
+
+theme/custom_font="res://assets/fonts/misaki_gothic.ttf"
+theme/default_font_size=16
+
 [input]
 
 move_up={
@@ -86,11 +91,6 @@ pause={
 , Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":6,"pressure":0.0,"pressed":false,"script":null)
 ]
 }
-
-[gui]
-
-theme/custom_font="res://assets/fonts/misaki_gothic.ttf"
-theme/default_font_size=8
 
 [rendering]
 

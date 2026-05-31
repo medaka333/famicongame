@@ -1,26 +1,28 @@
 extends Area2D
 class_name Boss
-## ボス（M10）。HP はステージ毎に可変（setup_hp）。3 種攻撃が HP でフェーズ遷移。
+## ボス（M15）。ステージ毎にスプライト＆攻撃パターンが変わる。撃破時に敵弾全消し。
 
 const BULLET_SCENE := preload("res://scenes/bullets/EnemyBullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
 
 var _max_hp: int = 40
 var _hp: int = 40
+var _sprite: String = "boss1"
 var _phase: int = 1
 var _dir: float = 1.0
 var _move_speed: float = 45.0
 var _fire_t: float = 1.0
 var _alive: bool = true
 
-func setup_hp(hp: int) -> void:
+func setup(hp: int, sprite: String) -> void:
 	_max_hp = hp
 	_hp = hp
+	_sprite = sprite
 
 func _ready() -> void:
 	collision_layer = Const.bit(Const.L_ENEMY)
 	collision_mask = 0
-	$Visual.texture = PixelArt.get_tex("boss")
+	$Visual.texture = PixelArt.get_tex(_sprite)
 	GameState.boss_appeared.emit()
 	GameState.boss_hp_changed.emit(_hp, _max_hp)
 
@@ -34,7 +36,6 @@ func _physics_process(delta: float) -> void:
 	elif position.x > 226.0:
 		position.x = 226.0
 		_dir = -1.0
-
 	_fire_t -= delta
 	if _fire_t <= 0.0:
 		_fire_t = [1.2, 0.9, 0.6][_phase - 1]
@@ -44,11 +45,19 @@ func _attack() -> void:
 	var bullets := get_tree().get_first_node_in_group("bullet_container") as Node2D
 	if bullets == null:
 		return
+	match _sprite:
+		"boss2":
+			_attack_crab(bullets)
+		"boss3":
+			_attack_final(bullets)
+		_:
+			_attack_fortress(bullets)
+
+# boss1: 自機狙い → 3way → 全方位8
+func _attack_fortress(bullets: Node2D) -> void:
 	match _phase:
 		1:
-			var p := get_tree().get_first_node_in_group(Const.G_PLAYER) as Node2D
-			var dir := (p.global_position - global_position).normalized() if p else Vector2.DOWN
-			_shoot(bullets, dir * 150.0)
+			_shoot(bullets, _aim() * 150.0)
 		2:
 			for a in [-0.35, 0.0, 0.35]:
 				_shoot(bullets, Vector2(sin(a), cos(a)) * 150.0)
@@ -56,6 +65,39 @@ func _attack() -> void:
 			for i in 8:
 				var ang := TAU * i / 8.0
 				_shoot(bullets, Vector2(cos(ang), sin(ang)) * 130.0)
+
+# boss2: 左右ばらまき → 下方向扇5way → 自機狙い拡散3
+func _attack_crab(bullets: Node2D) -> void:
+	match _phase:
+		1:
+			_shoot(bullets, Vector2(-120, 90))
+			_shoot(bullets, Vector2(120, 90))
+		2:
+			for a in [-0.6, -0.3, 0.0, 0.3, 0.6]:
+				_shoot(bullets, Vector2(sin(a), cos(a)) * 140.0)
+		_:
+			for s in [-0.2, 0.0, 0.2]:
+				_shoot(bullets, _aim().rotated(s) * 150.0)
+
+# boss3: 3way → 全方位8 → 全方位12 + 自機狙い（激しい・ADULT専用）
+func _attack_final(bullets: Node2D) -> void:
+	match _phase:
+		1:
+			for a in [-0.35, 0.0, 0.35]:
+				_shoot(bullets, Vector2(sin(a), cos(a)) * 150.0)
+		2:
+			for i in 8:
+				var ang := TAU * i / 8.0
+				_shoot(bullets, Vector2(cos(ang), sin(ang)) * 130.0)
+		_:
+			for i in 12:
+				var ang := TAU * i / 12.0
+				_shoot(bullets, Vector2(cos(ang), sin(ang)) * 120.0)
+			_shoot(bullets, _aim() * 180.0)
+
+func _aim() -> Vector2:
+	var p := get_tree().get_first_node_in_group(Const.G_PLAYER) as Node2D
+	return (p.global_position - global_position).normalized() if p else Vector2.DOWN
 
 func _shoot(container: Node2D, vel: Vector2) -> void:
 	var b := BULLET_SCENE.instantiate()
@@ -80,6 +122,9 @@ func take_damage(amount: int) -> void:
 
 func _die() -> void:
 	_alive = false
+	# 撃破時に敵弾を全消し（理不尽死防止）
+	for b in get_tree().get_nodes_in_group("enemy_bullet"):
+		b.queue_free()
 	GameState.add_score(5000)
 	GameState.boss_defeated.emit()
 	var fx_c := get_tree().get_first_node_in_group("fx_container") as Node2D
