@@ -1,6 +1,6 @@
 extends Area2D
 class_name Player
-## 自機（M2）。8 方向移動 + オート連射 + 被弾→残機減少→無敵点滅。§5.3
+## 自機。8方向移動 + オート連射 + 被弾無敵 + 噴射 2 フレームアニメ。
 
 @export var speed: float = 140.0
 const FIRE_COOLDOWN := [0.18, 0.12, 0.10]
@@ -11,6 +11,8 @@ const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
 
 var _fire_timer: float = 0.0
 var _invincible: bool = false
+var _anim_t: float = 0.0
+var _anim_f: int = 0
 
 func _ready() -> void:
 	add_to_group(Const.G_PLAYER)
@@ -19,7 +21,7 @@ func _ready() -> void:
 		| Const.bit(Const.L_ENEMY_BULLET) \
 		| Const.bit(Const.L_ITEM)
 	area_entered.connect(_on_area_entered)
-	_visual.texture = PixelArt.get_tex("player")
+	_visual.texture = PixelArt.get_tex("player0")
 
 func _physics_process(delta: float) -> void:
 	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -30,6 +32,12 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_pressed("shoot") and _fire_timer <= 0.0:
 		_fire_timer = FIRE_COOLDOWN[clampi(GameState.power_level, 0, 2)]
 		_shoot()
+
+	_anim_t += delta
+	if _anim_t >= 0.08:
+		_anim_t = 0.0
+		_anim_f = 1 - _anim_f
+		_visual.texture = PixelArt.get_tex("player" + str(_anim_f))
 
 func _shoot() -> void:
 	var bullets := get_tree().get_first_node_in_group("bullet_container") as Node2D
@@ -56,7 +64,7 @@ func _spawn(container: Node2D, pos: Vector2, vel: Vector2) -> void:
 func _on_area_entered(area: Area2D) -> void:
 	if _invincible:
 		return
-	if area is EnemyBullet or area is Enemy:
+	if area is EnemyBullet or area is Enemy or area is Boss:
 		_hit()
 
 func _hit() -> void:

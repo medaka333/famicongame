@@ -1,8 +1,7 @@
 extends Node
-## ドット絵生成（Autoload 名: PixelArt）。§M8
-## 文字グリッドのピクセルマップから ImageTexture を生成。外部画像ファイル不要。
-## 文字 = NES 風パレット色。'.' と未定義文字は透明。
-## 左右対称のものは左半分だけ定義し _mirror_h で 2 倍化。
+## ドット絵生成（Autoload 名: PixelArt）。§M8 / §M12
+## 文字グリッド → ImageTexture。外部画像不要。'.' と未定義文字は透明。
+## アニメは <base>0 / <base>1 の 2 フレーム（player, zako_red, zako_purple）。
 
 const PAL := {
 	"W": Color8(252, 252, 252),
@@ -17,7 +16,8 @@ const PAL := {
 	"K": Color8(60, 60, 60),
 }
 
-const PLAYER := [
+# 自機 フレーム0（噴射 長）
+const PLAYER0 := [
 	"................",
 	"................",
 	".......WW.......",
@@ -36,7 +36,28 @@ const PLAYER := [
 	"......R..R......",
 ]
 
-const ZAKO := [
+# 自機 フレーム1（噴射 短）
+const PLAYER1 := [
+	"................",
+	"................",
+	".......WW.......",
+	"......WCCW......",
+	"......WCCW......",
+	".....WCCCCW.....",
+	".....WCCCCW.....",
+	"....WCCCCCCW....",
+	"....WCCBBCCW....",
+	"...WCCCBBCCCW...",
+	"..WWCCCBBCCCWW..",
+	".WW.WCCCCCCW.WW.",
+	"WW..RYWCCWYR..WW",
+	"....RR....RR....",
+	".....R....R.....",
+	"................",
+]
+
+# ザコ フレーム0
+const ZAKO0 := [
 	"................",
 	"..R..........R..",
 	"..RR........RR..",
@@ -51,6 +72,26 @@ const ZAKO := [
 	"..RR..R..R..RR..",
 	"..R...R..R...R..",
 	"......R..R......",
+	"................",
+	"................",
+]
+
+# ザコ フレーム1（脚・触角が動く）
+const ZAKO1 := [
+	"................",
+	"...R........R...",
+	"..RR........RR..",
+	"...RR.RRRR.RR...",
+	"...RRRRRRRRRR...",
+	"..RRRWWRRWWRRR..",
+	"..RRRWWRRWWRRR..",
+	"..RRRRRRRRRRRR..",
+	"..RRRRRRRRRRRR..",
+	"...RRRRRRRRRR...",
+	"..RR..RRRR..RR..",
+	".RR...R..R...RR.",
+	".R....R..R....R.",
+	".....RR..RR.....",
 	"................",
 	"................",
 ]
@@ -96,7 +137,6 @@ const ITEM := [
 	"................",
 ]
 
-# 左半分のみ（16幅）。_mirror_h で 32幅の左右対称ボスになる。
 const BOSS_L := [
 	"................",
 	".......PPP......",
@@ -124,7 +164,6 @@ const BOSS_L := [
 	"................",
 ]
 
-# 左半分のみ（8幅）。_mirror_h で 16幅の爆発になる。
 const EXPLOSION_L := [
 	"........",
 	"......YY",
@@ -147,9 +186,12 @@ const EXPLOSION_L := [
 var _cache: Dictionary = {}
 
 func _ready() -> void:
-	_cache["player"] = _make(PLAYER)
-	_cache["zako_red"] = _make(ZAKO)
-	_cache["zako_purple"] = _make(_recolor(ZAKO, "R", "P"))
+	_cache["player0"] = _make(PLAYER0)
+	_cache["player1"] = _make(PLAYER1)
+	_cache["zako_red0"] = _make(ZAKO0)
+	_cache["zako_red1"] = _make(ZAKO1)
+	_cache["zako_purple0"] = _make(_recolor(ZAKO0, "R", "P"))
+	_cache["zako_purple1"] = _make(_recolor(ZAKO1, "R", "P"))
 	_cache["pbullet"] = _make(PBULLET)
 	_cache["ebullet"] = _make(EBULLET)
 	_cache["item"] = _make(ITEM)

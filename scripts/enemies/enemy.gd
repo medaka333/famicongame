@@ -1,6 +1,6 @@
 extends Area2D
 class_name Enemy
-## 敵本体（M2）。§5.6
+## 敵本体。移動パターン + 射撃 + 2 フレームアニメ。§5.6
 
 @export var def: EnemyDef
 
@@ -8,6 +8,8 @@ var _hp: int = 1
 var _t: float = 0.0
 var _base_x: float = 0.0
 var _fire_t: float = 0.0
+var _anim_t: float = 0.0
+var _anim_f: int = 0
 
 const BULLET_SCENE := preload("res://scenes/bullets/EnemyBullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
@@ -24,7 +26,7 @@ func _ready() -> void:
 	_hp = def.max_hp
 	_base_x = position.x
 	_fire_t = def.fire_interval if def.fire_interval > 0.0 else INF
-	$Visual.texture = PixelArt.get_tex(def.sprite_name)
+	$Visual.texture = PixelArt.get_tex(def.sprite_name + "0")
 
 func _physics_process(delta: float) -> void:
 	_t += delta
@@ -48,13 +50,14 @@ func _physics_process(delta: float) -> void:
 			_fire_t = def.fire_interval
 			_fire()
 
+	_anim_t += delta
+	if _anim_t >= 0.18:
+		_anim_t = 0.0
+		_anim_f = 1 - _anim_f
+		$Visual.texture = PixelArt.get_tex(def.sprite_name + str(_anim_f))
+
 	if position.y > 260.0:
 		queue_free()
-
-func take_damage(amount: int) -> void:
-	_hp -= amount
-	if _hp <= 0:
-		_die()
 
 func _fire() -> void:
 	var bullets := get_tree().get_first_node_in_group("bullet_container") as Node2D
@@ -64,6 +67,11 @@ func _fire() -> void:
 	bullets.add_child(b)
 	b.global_position = global_position
 	b.setup(Vector2(0, 140))
+
+func take_damage(amount: int) -> void:
+	_hp -= amount
+	if _hp <= 0:
+		_die()
 
 func _die() -> void:
 	GameState.add_score(def.score)
