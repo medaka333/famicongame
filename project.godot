@@ -87,6 +87,11 @@ pause={
 ]
 }
 
+[gui]
+
+theme/custom_font="res://assets/fonts/misaki_gothic.ttf"
+theme/default_font_size=8
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

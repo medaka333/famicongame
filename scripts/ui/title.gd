@@ -1,5 +1,5 @@
 extends Node2D
-## タイトル（M14）。KIDS/ADULT 選択 + 操作説明 + 放置デモ。
+## タイトル（M14・日本語）。KIDS/ADULT 選択 + 操作説明 + 放置デモ。
 
 var _sel: int = 0
 var _idle: float = 0.0
@@ -8,13 +8,13 @@ func _ready() -> void:
 	GameState.is_demo = false
 	AudioManager.stop_bgm()
 	GameState.difficulty = GameState.Diff.KIDS
-	$HiScoreLabel.text = "HI-SCORE  %06d" % GameState.hi_score
+	$HiScoreLabel.text = "ハイスコア  %06d" % GameState.hi_score
 	_refresh()
 	_blink()
 
 func _refresh() -> void:
-	$KidsLabel.text = ("> " if _sel == 0 else "  ") + "KIDS  - EASY -"
-	$AdultLabel.text = ("> " if _sel == 1 else "  ") + "ADULT - HARD -"
+	$KidsLabel.text = ("> " if _sel == 0 else "  ") + "こども（やさしい）"
+	$AdultLabel.text = ("> " if _sel == 1 else "  ") + "おとな（むずかしい）"
 
 func _process(delta: float) -> void:
 	_idle += delta
