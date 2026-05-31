@@ -15,7 +15,6 @@ func _ready() -> void:
 	GameState.reset_run()
 	GameState.game_over.connect(_on_game_over)
 	GameState.all_clear.connect(_on_all_clear)
-	AudioManager.play_bgm()
 
 func add_shake(amount: float) -> void:
 	_trauma = minf(_trauma + amount, 1.0)

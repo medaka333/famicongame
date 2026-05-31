@@ -28,6 +28,7 @@ func _start_stage() -> void:
 	if bg:
 		bg.color = s.bg_color
 	GameState.stage_changed.emit(_stage + 1)
+	AudioManager.play_bgm("stage")
 
 func _process(delta: float) -> void:
 	if _phase != Phase.ZAKO or _stage >= stages.size():
@@ -60,6 +61,7 @@ func _to_warning() -> void:
 
 func _spawn_boss() -> void:
 	_phase = Phase.BOSS
+	AudioManager.play_bgm("boss")
 	var s := stages[_stage]
 	var boss := BOSS_SCENE.instantiate()
 	boss.setup_hp(s.boss_hp)
