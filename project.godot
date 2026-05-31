@@ -1,0 +1,66 @@
+; Engine configuration file for famicongame (M0).
+; Open this folder in Godot 4.3+ (Project > Import or just open project.godot).
+
+config_version=5
+
+[application]
+
+config/name="famicongame"
+run/main_scene="res://scenes/main/Main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Const="*res://scripts/autoload/const.gd"
+GameState="*res://scripts/autoload/game_state.gd"
+AudioManager="*res://scripts/autoload/audio_manager.gd"
+InputManager="*res://scripts/autoload/input_manager.gd"
+BulletPool="*res://scripts/autoload/bullet_pool.gd"
+
+[display]
+
+window/size/viewport_width=256
+window/size/viewport_height=240
+window/size/window_width_override=1024
+window/size/window_height_override=960
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
+window/stretch/scale_mode="integer"
+
+[input]
+
+move_up={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194320),Object(InputEventKey,"physical_keycode":87),Object(InputEventJoypadButton,"button_index":11)]
+}
+move_down={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194322),Object(InputEventKey,"physical_keycode":83),Object(InputEventJoypadButton,"button_index":12)]
+}
+move_left={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194319),Object(InputEventKey,"physical_keycode":65),Object(InputEventJoypadButton,"button_index":13)]
+}
+move_right={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194321),Object(InputEventKey,"physical_keycode":68),Object(InputEventJoypadButton,"button_index":14)]
+}
+shoot={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":90),Object(InputEventJoypadButton,"button_index":1)]
+}
+special={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":88),Object(InputEventJoypadButton,"button_index":0)]
+}
+pause={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194305),Object(InputEventJoypadButton,"button_index":6)]
+}
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0

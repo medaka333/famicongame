@@ -1,0 +1,24 @@
+[gd_scene format=3]
+
+[node name="Main" type="Node2D"]
+
+[node name="BG" type="ColorRect" parent="."]
+offset_right = 256.0
+offset_bottom = 240.0
+color = Color(0.04, 0.05, 0.16, 1)
+
+[node name="Title" type="Label" parent="."]
+offset_left = 28.0
+offset_top = 96.0
+offset_right = 228.0
+offset_bottom = 116.0
+text = "FAMICOMGAME"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="."]
+offset_left = 28.0
+offset_top = 124.0
+offset_right = 228.0
+offset_bottom = 140.0
+text = "M0 : 256x240 OK"
+horizontal_alignment = 1

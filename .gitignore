@@ -1,0 +1,16 @@
+# Godot 4+ editor cache & import data
+.godot/
+
+# Exports / builds
+/build/
+/export/
+*.exe
+*.pck
+*.zip
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings
+.claude/settings.local.json
