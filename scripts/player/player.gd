@@ -33,8 +33,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if GameState.is_demo:
 		_demo_t += delta
-		position.x = 128.0 + sin(_demo_t * 1.3) * 90.0
-		position.y = 196.0 + sin(_demo_t * 0.7) * 16.0
+		# リサージュ曲線: X と Y で周期をずらし、上下・斜め・曲線移動にする
+		position.x = 128.0 + sin(_demo_t * 1.1) * 95.0
+		position.y = 150.0 + sin(_demo_t * 1.9 + 1.0) * 60.0
 	else:
 		var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		position += dir * speed * delta
