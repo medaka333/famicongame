@@ -17,6 +17,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 config/name="famicongame"
 config/version="1.0.0"
 run/main_scene="res://scenes/ui/Title.tscn"
+run/main_scene.breakout="res://scenes/breakout/BreakoutTitle.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 

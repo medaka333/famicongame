@@ -1,0 +1,127 @@
+extends Node2D
+## ブロック崩し: ボール。サブステップCCD + 円-AABB反射。
+## ブロック/ボスとの判定は breakout.gd の ball_collide() に委譲（法線を bounce() で受ける）。
+
+const R := 3.0
+var velocity := Vector2.ZERO
+var speed := 116.0
+var base_speed := 116.0
+var stuck := true
+var _slow_t := 0.0
+var _thru_t := 0.0
+var _root: Node
+var _paddle: Node
+
+signal lost(ball)
+
+func setup(root: Node, paddle: Node, spd: float) -> void:
+	_root = root
+	_paddle = paddle
+	speed = spd
+	base_speed = spd
+
+func is_thru() -> bool:
+	return _thru_t > 0.0
+
+func set_slow(dur: float) -> void:
+	_slow_t = maxf(_slow_t, dur)
+
+func set_thru(dur: float) -> void:
+	_thru_t = maxf(_thru_t, dur)
+
+func launch(dir_x := 0.0) -> void:
+	if not stuck:
+		return
+	stuck = false
+	var a := deg_to_rad(clampf(dir_x, -0.5, 0.5) * 60.0 + randf_range(-12.0, 12.0))
+	velocity = Vector2(sin(a), -cos(a)) * speed
+	AudioManager.play_se("shot")
+
+func launch_dir(v: Vector2) -> void:
+	stuck = false
+	if v.length() > 0.01:
+		velocity = v.normalized() * speed
+
+func _physics_process(delta: float) -> void:
+	if _slow_t > 0.0:
+		_slow_t -= delta
+	if _thru_t > 0.0:
+		_thru_t -= delta
+	if stuck:
+		if _paddle and is_instance_valid(_paddle):
+			position = Vector2(_paddle.position.x, _paddle.position.y - 8.0)
+		queue_redraw()
+		return
+	var eff := speed * (0.6 if _slow_t > 0.0 else 1.0)
+	if velocity.length() > 0.01:
+		velocity = velocity.normalized() * eff
+	var steps := 1 + int(velocity.length() * delta / R)
+	var sub := delta / float(steps)
+	for _i in steps:
+		position += velocity * sub
+		_walls()
+		_paddle_bounce()
+		if _root and is_instance_valid(_root):
+			_root.ball_collide(self)
+		if position.y - R > 244.0:
+			lost.emit(self)
+			return
+	queue_redraw()
+
+func _walls() -> void:
+	var hit := false
+	if position.x < 8.0 + R and velocity.x < 0.0:
+		position.x = 8.0 + R
+		velocity.x = absf(velocity.x)
+		hit = true
+	elif position.x > 248.0 - R and velocity.x > 0.0:
+		position.x = 248.0 - R
+		velocity.x = -absf(velocity.x)
+		hit = true
+	if position.y < 8.0 + R and velocity.y < 0.0:
+		position.y = 8.0 + R
+		velocity.y = absf(velocity.y)
+		hit = true
+	if hit:
+		AudioManager.play_se("cursor")
+
+func _paddle_bounce() -> void:
+	if not (_paddle and is_instance_valid(_paddle)):
+		return
+	var p = _paddle
+	var pr := Rect2(p.position.x - p.half_w, p.position.y - 4.0, p.half_w * 2.0, 8.0)
+	var closest := position.clamp(pr.position, pr.end)
+	if position.distance_to(closest) < R and velocity.y > 0.0:
+		var off: float = p.hit_offset(position.x)
+		var a := deg_to_rad(off * 60.0)
+		velocity = Vector2(sin(a), -cos(a)) * speed
+		position.y = pr.position.y - R
+		_accelerate()
+		AudioManager.play_se("cursor")
+		if _root and is_instance_valid(_root):
+			_root.notify_paddle_touch()
+
+func bounce(n: Vector2) -> void:
+	if velocity.dot(n) < 0.0:
+		velocity = velocity.bounce(n)
+		_accelerate()
+		_enforce_min_vy()
+
+func _accelerate() -> void:
+	speed = minf(speed + 2.5, base_speed * 1.8)
+	if velocity.length() > 0.01:
+		velocity = velocity.normalized() * speed
+
+func _enforce_min_vy() -> void:
+	var mv := speed * 0.28
+	if absf(velocity.y) < mv:
+		velocity.y = mv if velocity.y >= 0.0 else -mv
+		if velocity.length() > 0.01:
+			velocity = velocity.normalized() * speed
+
+func _draw() -> void:
+	draw_circle(Vector2.ZERO, R + 1.0, Color(1, 1, 1, 0.25))
+	if _thru_t > 0.0:
+		draw_circle(Vector2.ZERO, R, Color(1.0, 0.5, 1.0))
+	else:
+		draw_circle(Vector2.ZERO, R, Color(1, 1, 1))

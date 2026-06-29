@@ -3,6 +3,7 @@
 
 # Exports / builds
 /build/
+/web/
 /export/
 *.exe
 *.pck
