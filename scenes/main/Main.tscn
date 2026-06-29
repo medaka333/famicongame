@@ -1,13 +1,13 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bq1ymr8hct1g"]
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" unique_id=694452081]
 
-[node name="BG" type="ColorRect" parent="."]
+[node name="BG" type="ColorRect" parent="." unique_id=2032558984]
 offset_right = 256.0
 offset_bottom = 240.0
 color = Color(0.04, 0.05, 0.16, 1)
 
-[node name="Title" type="Label" parent="."]
+[node name="Title" type="Label" parent="." unique_id=110316177]
 offset_left = 28.0
 offset_top = 96.0
 offset_right = 228.0
@@ -15,7 +15,7 @@ offset_bottom = 116.0
 text = "FAMICOMGAME"
 horizontal_alignment = 1
 
-[node name="Sub" type="Label" parent="."]
+[node name="Sub" type="Label" parent="." unique_id=725897325]
 offset_left = 28.0
 offset_top = 124.0
 offset_right = 228.0

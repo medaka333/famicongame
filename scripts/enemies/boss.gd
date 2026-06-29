@@ -20,9 +20,17 @@ func setup(hp: int, sprite: String) -> void:
 	_sprite = sprite
 
 func _ready() -> void:
+	add_to_group(Const.G_ENEMIES)
 	collision_layer = Const.bit(Const.L_ENEMY)
 	collision_mask = 0
-	$Visual.texture = PixelArt.get_tex(_sprite)
+	if _sprite == "boss1":
+		var tex := load("res://assets/sprites/boss1_crab.png") as Texture2D
+		$Visual.texture = tex
+		if tex != null and tex.get_width() > 56:
+			var s := 56.0 / float(tex.get_width())
+			$Visual.scale = Vector2(s, s)
+	else:
+		$Visual.texture = PixelArt.get_tex(_sprite)
 	GameState.boss_appeared.emit()
 	GameState.boss_hp_changed.emit(_hp, _max_hp)
 
@@ -111,6 +119,7 @@ func take_damage(amount: int) -> void:
 	_hp -= amount
 	GameState.boss_hp_changed.emit(maxi(_hp, 0), _max_hp)
 	get_tree().call_group("game", "add_shake", 0.05)
+	_flash()
 	if _hp <= _max_hp * 2 / 3 and _phase < 2:
 		_phase = 2
 		_move_speed = 65.0
@@ -119,6 +128,12 @@ func take_damage(amount: int) -> void:
 		_move_speed = 90.0
 	if _hp <= 0:
 		_die()
+
+func _flash() -> void:
+	$Visual.modulate = Color(1.6, 1.6, 1.6)
+	await get_tree().create_timer(0.04).timeout
+	if is_instance_valid(self):
+		$Visual.modulate = Color(1.0, 1.0, 1.0)
 
 func _die() -> void:
 	_alive = false

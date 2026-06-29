@@ -32,6 +32,7 @@ func _ready() -> void:
 	_se["explosion"] = _noise(0.30, 90)
 	_se["powerup"]   = _arp([523.0, 659.0, 784.0, 1047.0], 0.05, 80)
 	_se["miss"]      = _square(420.0, 80.0, 0.42, 0.5, 90)
+	_se["cursor"]    = _square(880.0, 1100.0, 0.04, 0.5, 50)
 
 	_bgm["stage"] = _compose(STAGE_MEL, STAGE_BASS, 0.15, 80, 40)
 	_bgm["boss"]  = _compose(BOSS_MEL, BOSS_BASS, 0.12, 80, 42)

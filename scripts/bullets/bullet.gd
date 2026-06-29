@@ -23,4 +23,18 @@ func _physics_process(delta: float) -> void:
 func _on_area_entered(area: Area2D) -> void:
 	if area.has_method("take_damage"):
 		area.take_damage(1)
+		_spawn_spark()
 	queue_free()
+
+func _spawn_spark() -> void:
+	var fx := get_tree().get_first_node_in_group("fx_container") as Node2D
+	if fx == null:
+		return
+	var s := Sprite2D.new()
+	s.texture = PixelArt.get_tex("spark")
+	s.global_position = global_position
+	fx.add_child(s)
+	var tw := s.create_tween()
+	tw.tween_property(s, "scale", Vector2(1.6, 1.6), 0.06)
+	tw.parallel().tween_property(s, "modulate:a", 0.0, 0.09)
+	tw.tween_callback(s.queue_free)

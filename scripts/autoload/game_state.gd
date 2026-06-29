@@ -68,6 +68,14 @@ func add_power() -> void:
 	power_level = mini(power_level + 1, MAX_POWER)
 	power_changed.emit(power_level)
 
+func damage_power() -> void:
+	# 被弾時のパワーダウン: こども=1段ダウン / おとな=Lv0リセット
+	if difficulty == Diff.KIDS:
+		power_level = maxi(power_level - 1, 0)
+	else:
+		power_level = 0
+	power_changed.emit(power_level)
+
 func lose_life() -> void:
 	if lives <= 0:
 		return

@@ -1,6 +1,6 @@
 extends Area2D
 class_name Player
-## 自機（M14）。通常操作 / デモ時は自動操作（左右ゆれ＋常時射撃・被弾無効）。
+## 自機（M16）。通常操作 / デモ時は AI（敵を狙い、敵弾を避ける）。デモ中も被弾する。
 
 @export var speed: float = 140.0
 const FIRE_COOLDOWN := [0.18, 0.12, 0.10]
@@ -14,6 +14,10 @@ var _invincible: bool = false
 var _anim_t: float = 0.0
 var _anim_f: int = 0
 var _demo_t: float = 0.0
+var _demo_decide_t: float = 0.0
+var _demo_tx: float = 128.0
+var _demo_ty: float = 160.0
+var _demo_avoiding: bool = false
 
 func _ready() -> void:
 	add_to_group(Const.G_PLAYER)
@@ -32,10 +36,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if GameState.is_demo:
-		_demo_t += delta
-		# リサージュ曲線: X と Y で周期をずらし、上下・斜め・曲線移動にする
-		position.x = 128.0 + sin(_demo_t * 1.1) * 95.0
-		position.y = 150.0 + sin(_demo_t * 1.9 + 1.0) * 60.0
+		_demo_move(delta)
 	else:
 		var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		position += dir * speed * delta
@@ -51,6 +52,79 @@ func _physics_process(delta: float) -> void:
 		_anim_t = 0.0
 		_anim_f = 1 - _anim_f
 		_visual.texture = PixelArt.get_tex("player" + str(_anim_f))
+
+# --- デモ AI ---
+
+func _demo_move(delta: float) -> void:
+	_demo_t += delta
+	# 回避方向だけ 0.15 秒ごとに決める（毎フレーム判断だと震える）
+	_demo_decide_t -= delta
+	if _demo_decide_t <= 0.0:
+		_demo_decide_t = 0.15
+		_demo_decide()
+	var tx := position.x
+	var ty := 160.0 + sin(_demo_t * 1.4) * 32.0   # 上下にゆらぐ
+	if _demo_avoiding:
+		# 回避中は決めた逃げ先へ（固定なので震えない）
+		tx = _demo_tx
+		ty = _demo_ty
+	else:
+		# アイテムがあれば取りに行く、なければ最寄り敵を狙う（毎フレーム滑らか追従）
+		var item := _demo_item()
+		if item != null:
+			tx = item.global_position.x
+		else:
+			var e := _demo_enemy()
+			if e != null:
+				tx = e.global_position.x
+	tx = clampf(tx, Const.FIELD_MIN.x, Const.FIELD_MAX.x)
+	ty = clampf(ty, Const.FIELD_MIN.y, Const.FIELD_MAX.y)
+	position.x = move_toward(position.x, tx, speed * delta)
+	position.y = move_toward(position.y, ty, speed * delta)
+
+func _demo_decide() -> void:
+	var threat := _demo_threat()
+	if threat != null:
+		_demo_avoiding = true
+		_demo_tx = position.x + (70.0 if threat.global_position.x < position.x else -70.0)
+		_demo_ty = position.y + 24.0
+	else:
+		_demo_avoiding = false
+
+func _demo_threat() -> Node2D:
+	var best: Node2D = null
+	var bd := 64.0
+	for b in get_tree().get_nodes_in_group("enemy_bullet"):
+		var bb := b as Node2D
+		if bb.global_position.y < position.y + 8.0:
+			var d := bb.global_position.distance_to(position)
+			if d < bd:
+				bd = d
+				best = bb
+	return best
+
+func _demo_enemy() -> Node2D:
+	var best: Node2D = null
+	var bd := 9999.0
+	for e in get_tree().get_nodes_in_group(Const.G_ENEMIES):
+		var ee := e as Node2D
+		var d := absf(ee.global_position.x - position.x)
+		if d < bd:
+			bd = d
+			best = ee
+	return best
+
+func _demo_item() -> Node2D:
+	var best: Node2D = null
+	var bd := 9999.0
+	for it in get_tree().get_nodes_in_group(Const.G_ITEMS):
+		var ii := it as Node2D
+		if ii.global_position.y < 230.0:
+			var d := absf(ii.global_position.x - position.x)
+			if d < bd:
+				bd = d
+				best = ii
+	return best
 
 func _shoot() -> void:
 	var bullets := get_tree().get_first_node_in_group("bullet_container") as Node2D
@@ -75,7 +149,7 @@ func _spawn(container: Node2D, pos: Vector2, vel: Vector2) -> void:
 	b.setup(vel)
 
 func _on_area_entered(area: Area2D) -> void:
-	if _invincible or GameState.is_demo:
+	if _invincible:
 		return
 	if area is EnemyBullet or area is Enemy or area is Boss:
 		_hit()
@@ -85,6 +159,7 @@ func _hit() -> void:
 	get_tree().call_group("game", "add_shake", 0.5)
 	GameState.lose_life()
 	if GameState.lives > 0:
+		GameState.damage_power()
 		_start_invincible()
 	else:
 		hide()

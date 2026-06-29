@@ -46,6 +46,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_game_over() -> void:
 	AudioManager.stop_bgm()
+	if GameState.is_demo:
+		GameState.is_demo = false
+		get_tree().change_scene_to_file("res://scenes/ui/Title.tscn")
+		return
 	await get_tree().create_timer(1.0).timeout
 	get_tree().change_scene_to_file("res://scenes/ui/GameOver.tscn")
 

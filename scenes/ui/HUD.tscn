@@ -57,7 +57,7 @@ offset_left = 110.0
 offset_top = 220.0
 offset_right = 254.0
 offset_bottom = 238.0
-text = "移動 J：ショット"
+text = "J：ショット"
 horizontal_alignment = 2
 
 [node name="DemoLabel" type="Label" parent="."]

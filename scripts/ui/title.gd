@@ -38,6 +38,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("move_up") or event.is_action_pressed("move_down"):
 		_sel = 1 - _sel
 		_refresh()
+		AudioManager.play_se("cursor")
 	elif event.is_action_pressed("shoot") or event.is_action_pressed("ui_select_start"):
 		GameState.difficulty = _sel
 		get_tree().change_scene_to_file("res://scenes/game/Game.tscn")

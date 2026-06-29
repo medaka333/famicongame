@@ -57,12 +57,12 @@ const ITEM := [
 
 # ボス（左半分16幅 → mirror で32幅）
 const BOSS1_L := [
-	"................", ".......PPP......", "......PPPPP.....", "......PPPPP.....",
-	".....PPPPPPP....", "....PPPPPPPPP...", "...PPPPPPPPPPP..", "..PPPPPPPPPPPPP.",
-	".PPPPPPPPPPPPPPP", ".PPPPKKKPPPPPPPP", ".PPPKKKKKPPPPOOO", ".PPPKKKKKPPPOOYY",
-	".PPPKKKKKPPPOOYY", ".PPPKKKKKPPPPOOO", ".PPPPPPPPPPPPPPP", "..PPPPPPPPPPPPPP",
-	"...PPPPPPPPPPPPP", "....PPPPP...PPPP", "...PPPP.....PPPP", "..PPPP......PPPP",
-	"..PPP...........", ".PP.............", "................", "................",
+	"................", "................", "......MMMMMMMMMM", "....MMMMMMMMMMMM",
+	"...MMMMMMMMMMMMM", "..MMMMMMMMMMMMMM", "..MMMMOMMMMMMMMM", "..MMMMMMMMMMMMMM",
+	"...MMMMMMMMMMMMM", "....MMMMMMMMMMMM", ".....MMMMMMMMMMM", "R...O.MMMMMMMMM.",
+	"RR.O...MMMMMMM..", ".O.O....MMMMM...", "O.O......MMM....", ".O........M.....",
+	"O...............", "................", "................", "................",
+	"................", "................", "................", "................",
 ]
 const BOSS2_L := [
 	"................", "...........BBB..", "..........BBBBB.", ".........BBBBBBB",
@@ -97,6 +97,11 @@ const EXP2_L := [
 	"..Y..O..", ".....M.Y", "Y...Y...", "........",
 ]
 
+const SPARK := [
+	"..Y..Y..", "...YY...", ".YYWWYY.", "..WWWW..",
+	"..WWWW..", ".YYWWYY.", "...YY...", "..Y..Y..",
+]
+
 var _cache: Dictionary = {}
 
 func _ready() -> void:
@@ -116,6 +121,7 @@ func _ready() -> void:
 	_cache["exp0"] = _make(_mirror_h(EXP0_L))
 	_cache["exp1"] = _make(_mirror_h(EXP1_L))
 	_cache["exp2"] = _make(_mirror_h(EXP2_L))
+	_cache["spark"] = _make(SPARK)
 
 func get_tex(name: String) -> Texture2D:
 	return _cache.get(name)
