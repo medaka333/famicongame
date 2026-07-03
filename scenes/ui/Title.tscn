@@ -43,6 +43,7 @@ text = "十字キー：移動　Ａ：ショット"
 horizontal_alignment = 1
 
 [node name="ConfigLabel" type="Label" parent="."]
+visible = false
 offset_left = 8.0
 offset_top = 164.0
 offset_right = 248.0
