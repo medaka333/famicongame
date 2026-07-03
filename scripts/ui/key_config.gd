@@ -3,10 +3,10 @@ extends Node2D
 ## カーソル: 矢印/WASD（上下）、J で該当アクションを「パッド入力待ち」にし、
 ## 次に押したジョイパッドのボタン/方向を登録。Esc でタイトルへ戻る。
 
-const ACTIONS := ["move_up", "move_down", "move_left", "move_right", "shoot", "special", "pause"]
+const ACTIONS := ["move_up", "move_down", "move_left", "move_right", "shoot", "special"]
 const NAMES := {
 	"move_up": "UP", "move_down": "DOWN", "move_left": "LEFT", "move_right": "RIGHT",
-	"shoot": "SHOOT (B)", "special": "SPECIAL (A)", "pause": "PAUSE (START)"
+	"shoot": "SHOOT (A)", "special": "SPECIAL (B)",
 }
 
 var _sel := 0

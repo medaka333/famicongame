@@ -41,9 +41,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			GameState.is_demo = false
 			get_tree().change_scene_to_file("res://scenes/ui/Title.tscn")
 		return
-	if event.is_action_pressed("pause"):
-		get_tree().paused = not get_tree().paused
-
 func _on_game_over() -> void:
 	AudioManager.stop_bgm()
 	if GameState.is_demo:

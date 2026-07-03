@@ -4,7 +4,7 @@ extends Node
 ## 画面から再設定でき、user:// に保存して次回も復元する。
 
 const SAVE_PATH := "user://input_config.cfg"
-const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "shoot", "special", "pause"]
+const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "shoot", "special"]
 
 func _ready() -> void:
 	Input.joy_connection_changed.connect(_on_joy_changed)
