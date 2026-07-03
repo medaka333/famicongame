@@ -22,14 +22,17 @@ const COLORS := {
 	"P": Color8(152, 80, 248),
 }
 
+# STAGE1: 松葉ガニ。R/O=甲羅と脚、Y=目、左右対称。14列。
 const STAGE1 := {
 	"layout": [
-		"RRRRRRRRRRRRRR",
-		"OOOOOOOOOOOOOO",
-		"YYYYYYYYYYYYYY",
-		"GGGGGGGGGGGGGG",
-		"CCCCCCCCCCCCCC",
-		"BBBBBBBBBBBBBB",
+		"..R........R..",
+		"..RR.OOOO.RR..",
+		"...ROORROOR...",
+		".OOORRYYRROOO.",
+		"OO..ORRRRO..OO",
+		"..O..OOOO..O..",
+		".O..O....O..O.",
+		"O..O......O..O",
 	],
 	"bg": Color(0.04, 0.04, 0.10),
 }
@@ -244,7 +247,11 @@ func ball_collide(ball) -> void:
 	ball.position = best_closest + best_n * ball.R
 	ball.bounce(best_n)
 	if best.breakable:
-		if best.hit():
+		if ball.is_big():
+			# でかボール: 当たったブロック + 近くの1個 = 2個破壊
+			_destroy_block(best)
+			_destroy_extra(ball, best)
+		elif best.hit():
 			_destroy_block(best)
 		else:
 			AudioManager.play_se("cursor")
@@ -287,10 +294,11 @@ func _destroy_block(b) -> void:
 func _maybe_drop(at: Vector2) -> void:
 	if get_tree().get_nodes_in_group(Const.G_ITEMS).size() >= 3:
 		return
-	if randf() < 0.12:
-		var kinds := ["E", "M", "S", "T", "U"]
+	if randf() < 0.16:
+		# 通常パワーアップは出やすく、1UP(U)は超レア（ドロップの3%）
+		var kind: String = "U" if randf() < 0.03 else ["E", "M", "T", "B"].pick_random()
 		var it = Item.new()
-		it.setup(self, kinds.pick_random())
+		it.setup(self, kind)
 		$World.add_child(it)
 		it.position = at
 
@@ -304,15 +312,16 @@ func apply_item(kind: String) -> void:
 				_paddle.expand()
 		"M":
 			_multiball()
-		"S":
-			for b in balls:
-				b.set_slow(8.0)
 		"T":
 			for b in balls:
 				b.set_thru(8.0)
+		"B":
+			for b in balls:
+				b.set_big(8.0)
 		"U":
 			lives += 1
 			_update_lives()
+	_powerup_fx(kind)
 
 func _multiball() -> void:
 	var src := balls.duplicate()
@@ -440,6 +449,19 @@ func boss_defeated() -> void:
 
 # --- 演出 ---
 
+func _destroy_extra(ball, skip) -> void:
+	var nearest = null
+	var nearest_dist := 24.0
+	for b in blocks:
+		if not is_instance_valid(b) or not b.alive or not b.breakable or b == skip:
+			continue
+		var d := ball.position.distance_to(b.position)
+		if d < nearest_dist:
+			nearest_dist = d
+			nearest = b
+	if nearest:
+		_destroy_block(nearest)
+
 func _spark(at: Vector2) -> void:
 	var s := Sprite2D.new()
 	s.texture = PixelArt.get_tex("spark")
@@ -449,6 +471,57 @@ func _spark(at: Vector2) -> void:
 	tw.tween_property(s, "scale", Vector2(2, 2), 0.18)
 	tw.parallel().tween_property(s, "modulate:a", 0.0, 0.2)
 	tw.tween_callback(s.queue_free)
+
+# --- パワーアップ取得演出（何を取ったか分かりやすく）---
+
+const ITEM_NAME := {
+	"E": "ワイド！",
+	"M": "ボール＋２！",
+	"T": "つらぬき！",
+	"B": "でかボール！",
+	"U": "残機１ＵＰ！",
+}
+
+func _powerup_fx(kind: String) -> void:
+	var col: Color = Item.COL.get(kind, Color.WHITE)
+	var at := Vector2(128.0, 196.0)
+	if _paddle and is_instance_valid(_paddle):
+		at = Vector2(_paddle.position.x, _paddle.position.y - 14.0)
+		_paddle.flash(col)
+	_burst(at, col)
+	_popup(ITEM_NAME.get(kind, "パワーアップ！"), at, col)
+	add_shake(0.12)
+
+func _burst(at: Vector2, col: Color) -> void:
+	for i in 8:
+		var ang := TAU * float(i) / 8.0
+		var s := Sprite2D.new()
+		s.texture = PixelArt.get_tex("spark")
+		s.position = at
+		s.modulate = col
+		$World/FX.add_child(s)
+		var dst := at + Vector2(cos(ang), sin(ang)) * 15.0
+		var tw := s.create_tween()
+		tw.tween_property(s, "position", dst, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(s, "modulate:a", 0.0, 0.35)
+		tw.tween_callback(s.queue_free)
+
+func _popup(text: String, at: Vector2, col: Color) -> void:
+	var l := Label.new()
+	l.text = text
+	l.position = Vector2(at.x - 64.0, at.y - 12.0)
+	l.size = Vector2(128.0, 16.0)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", 14)
+	l.add_theme_color_override("font_color", col)
+	l.add_theme_constant_override("outline_size", 4)
+	l.add_theme_color_override("font_outline_color", Color.BLACK)
+	$HUD.add_child(l)
+	var tw := l.create_tween()
+	tw.tween_property(l, "position:y", l.position.y - 24.0, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.55).set_delay(0.25)
+	tw.tween_callback(l.queue_free)
 
 func _explode(at: Vector2, variant: int) -> void:
 	var s := Sprite2D.new()

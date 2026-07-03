@@ -9,6 +9,8 @@ var _expanded := false
 var _shrink_t := 0.0
 var _cs: CollisionShape2D
 var _color := Color(0.36, 0.66, 1.0)
+var _flash_t := 0.0
+var _flash_col := Color.WHITE
 
 func setup(bh: float) -> void:
 	base_half = bh
@@ -24,6 +26,9 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 
 func _physics_process(delta: float) -> void:
+	if _flash_t > 0.0:
+		_flash_t -= delta
+		queue_redraw()
 	if _shrink_t > 0.0:
 		_shrink_t -= delta
 	var target := base_half
@@ -56,11 +61,21 @@ func reset_size() -> void:
 func shrink(dur: float) -> void:
 	_shrink_t = maxf(_shrink_t, dur)
 
+func flash(c: Color) -> void:
+	_flash_col = c
+	_flash_t = 0.35
+
 func _on_area_entered(a: Area2D) -> void:
 	if a.has_method("pickup"):
 		a.pickup()
 
 func _draw() -> void:
-	draw_rect(Rect2(-half_w, -4, half_w * 2.0, 8.0), _color)
+	var body := _color
+	if _flash_t > 0.0:
+		body = _color.lerp(_flash_col, _flash_t / 0.35)
+	draw_rect(Rect2(-half_w, -4, half_w * 2.0, 8.0), body)
 	draw_rect(Rect2(-half_w, -4, half_w * 2.0, 2.0), Color(0.8, 0.95, 1.0))
 	draw_rect(Rect2(-half_w, 2, half_w * 2.0, 2.0), Color(0.1, 0.3, 0.6))
+	if _flash_t > 0.0:
+		var a := 0.6 * _flash_t / 0.35
+		draw_rect(Rect2(-half_w - 1.0, -5.0, half_w * 2.0 + 2.0, 10.0), Color(_flash_col.r, _flash_col.g, _flash_col.b, a), false, 2.0)
