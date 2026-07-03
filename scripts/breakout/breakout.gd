@@ -455,7 +455,7 @@ func _destroy_extra(ball, skip) -> void:
 	for b in blocks:
 		if not is_instance_valid(b) or not b.alive or not b.breakable or b == skip:
 			continue
-		var d := ball.position.distance_to(b.position)
+		var d: float = ball.position.distance_to(b.position)
 		if d < nearest_dist:
 			nearest_dist = d
 			nearest = b
