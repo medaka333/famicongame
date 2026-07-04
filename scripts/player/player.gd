@@ -5,6 +5,7 @@ class_name Player
 @export var speed: float = 140.0
 const FIRE_COOLDOWN := [0.18, 0.12, 0.10]
 const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
+const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
 
 @onready var _visual: Sprite2D = $Visual
 @onready var _muzzle: Marker2D = $Muzzle
@@ -155,19 +156,80 @@ func _on_area_entered(area: Area2D) -> void:
 		_hit()
 
 func _hit() -> void:
-	AudioManager.play_se("miss")
-	get_tree().call_group("game", "add_shake", 0.5)
 	GameState.lose_life()
 	if GameState.lives > 0:
-		GameState.damage_power()
-		_start_invincible()
+		_hit_survive()
 	else:
-		hide()
-		set_physics_process(false)
-		set_deferred("monitoring", false)
+		_hit_death()
+
+# 被弾（残機あり）: 白フラッシュ + 破片 + 一瞬スロー → 無敵点滅
+func _hit_survive() -> void:
+	AudioManager.play_se("miss")
+	_visual.modulate = Color(4, 4, 4)   # 一瞬の白フラッシュ
+	get_tree().call_group("game", "add_shake", 0.6)
+	_spawn_debris(global_position, 5, 26.0)
+	get_tree().call_group("game", "hit_stop", 0.05, 0.15)
+	await get_tree().create_timer(0.05, true, false, true).timeout   # 白フラッシュを見せる
+	GameState.damage_power()
+	_start_invincible()
+
+# 破壊（残機0）: 爆散。強スロー → 爆発連鎖 + 破片放射
+func _hit_death() -> void:
+	set_physics_process(false)
+	set_deferred("monitoring", false)
+	_invincible = true
+	_visual.modulate = Color(5, 5, 5)
+	AudioManager.play_se("explosion")
+	get_tree().call_group("game", "add_shake", 1.0)
+	get_tree().call_group("game", "hit_stop", 0.15, 0.05)
+	await _death_burst()
+
+func _death_burst() -> void:
+	# 強スロー明けまで実時間で待ってから機体を消す
+	await get_tree().create_timer(0.15, true, false, true).timeout
+	hide()
+	# 爆発を機体周囲に時間差で連鎖
+	for i in 6:
+		var off := Vector2(randf_range(-10.0, 10.0), randf_range(-10.0, 10.0))
+		_spawn_explosion(global_position + off)
+		if i % 2 == 0:
+			AudioManager.play_se("explosion")
+		_spawn_debris(global_position + off, 3, 40.0)
+		await get_tree().create_timer(0.09, true, false, true).timeout
+
+func _fx() -> Node2D:
+	return get_tree().get_first_node_in_group("fx_container") as Node2D
+
+func _spawn_explosion(at: Vector2) -> void:
+	var fx := _fx()
+	if fx == null:
+		return
+	var e := EXPLOSION_SCENE.instantiate()
+	fx.add_child(e)
+	e.global_position = at
+
+# 破片スパークを放射状に飛ばす（breakout の _burst と同型）
+func _spawn_debris(at: Vector2, count: int, dist: float) -> void:
+	var fx := _fx()
+	if fx == null:
+		return
+	var base := randf() * TAU
+	for i in count:
+		var ang := base + TAU * float(i) / float(count)
+		var s := Sprite2D.new()
+		s.texture = PixelArt.get_tex("spark")
+		s.global_position = at
+		fx.add_child(s)
+		var dst := at + Vector2(cos(ang), sin(ang)) * dist
+		var tw := s.create_tween()
+		tw.tween_property(s, "global_position", dst, 0.32).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(s, "scale", Vector2(0.2, 0.2), 0.32)
+		tw.parallel().tween_property(s, "modulate:a", 0.0, 0.36)
+		tw.tween_callback(s.queue_free)
 
 func _start_invincible() -> void:
 	_invincible = true
+	_visual.modulate = Color(1, 1, 1, 1)   # フラッシュ解除
 	var tw := create_tween().set_loops(15)
 	tw.tween_property(_visual, "modulate:a", 0.1, 0.05)
 	tw.tween_property(_visual, "modulate:a", 1.0, 0.05)

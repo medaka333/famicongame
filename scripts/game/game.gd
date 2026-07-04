@@ -27,6 +27,12 @@ func _run_demo() -> void:
 func add_shake(amount: float) -> void:
 	_trauma = minf(_trauma + amount, 1.0)
 
+# ヒットストップ: 一瞬スロー → 実時間タイマーで確実に復帰
+func hit_stop(dur: float, scale: float = 0.05) -> void:
+	Engine.time_scale = scale
+	await get_tree().create_timer(dur, true, false, true).timeout
+	Engine.time_scale = 1.0
+
 func _process(delta: float) -> void:
 	if _trauma > 0.0:
 		_trauma = maxf(_trauma - delta * 1.5, 0.0)
@@ -47,7 +53,7 @@ func _on_game_over() -> void:
 		GameState.is_demo = false
 		get_tree().change_scene_to_file("res://scenes/ui/Title.tscn")
 		return
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().create_timer(1.3).timeout
 	get_tree().change_scene_to_file("res://scenes/ui/GameOver.tscn")
 
 func _on_all_clear() -> void:
