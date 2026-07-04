@@ -122,6 +122,8 @@ func _ready() -> void:
 	_cache["exp1"] = _make(_mirror_h(EXP1_L))
 	_cache["exp2"] = _make(_mirror_h(EXP2_L))
 	_cache["spark"] = _make(SPARK)
+	# 自機カラーの破片（敵弾のオレンジと区別するためシアン白）
+	_cache["spark_blue"] = _make(_recolor(SPARK, "Y", "C"))
 
 func get_tex(name: String) -> Texture2D:
 	return _cache.get(name)

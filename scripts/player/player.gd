@@ -217,7 +217,7 @@ func _spawn_debris(at: Vector2, count: int, dist: float) -> void:
 	for i in count:
 		var ang := base + TAU * float(i) / float(count)
 		var s := Sprite2D.new()
-		s.texture = PixelArt.get_tex("spark")
+		s.texture = PixelArt.get_tex("spark_blue")
 		s.global_position = at
 		fx.add_child(s)
 		var dst := at + Vector2(cos(ang), sin(ang)) * dist
