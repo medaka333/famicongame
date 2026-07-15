@@ -166,7 +166,12 @@ func _spawn_blocks(layout: Array) -> void:
 				b.setup(Color(0.82, 0.82, 0.88), 30 + seg * 10, 2, true)
 				_remaining += 1
 			else:
-				b.setup(COLORS.get(ch, Color.WHITE), 10 + seg * 10, 1, true)
+				var hp_ := 1
+				if stage == 1 and ch == "R":
+					hp_ = 2
+				elif stage == 1 and ch == "Y":
+					hp_ = 3
+				b.setup(COLORS.get(ch, Color.WHITE), 10 + seg * 10, hp_, true)
 				_remaining += 1
 			blocks.append(b)
 
@@ -294,7 +299,7 @@ func _destroy_block(b) -> void:
 func _maybe_drop(at: Vector2) -> void:
 	if get_tree().get_nodes_in_group(Const.G_ITEMS).size() >= 3:
 		return
-	if randf() < 0.16:
+	if randf() < 0.21:
 		# 通常パワーアップは出やすく、1UP(U)は超レア（ドロップの3%）
 		var kind: String = "U" if randf() < 0.03 else ["E", "M", "T", "B"].pick_random()
 		var it = Item.new()
@@ -537,8 +542,6 @@ func add_shake(a: float) -> void:
 	_trauma = minf(_trauma + a, 1.0)
 
 func _process(delta: float) -> void:
-	if get_tree().paused:
-		return
 	if _trauma > 0.0:
 		_trauma = maxf(_trauma - delta * 1.5, 0.0)
 		var amt := _trauma * _trauma * 5.0
@@ -563,9 +566,7 @@ func _process(delta: float) -> void:
 				s.queue_free()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause"):
-		get_tree().paused = not get_tree().paused
-	elif event.is_action_pressed("shoot"):
+	if event.is_action_pressed("shoot"):
 		for b in balls:
 			if is_instance_valid(b) and b.stuck:
 				b.launch(0.0)
