@@ -6,10 +6,14 @@
 /web/*
 !/web/index.html
 !/web/.gitignore
+!/web/stg/
+!/web/breakout/
 /export/
 *.exe
 *.pck
 *.zip
+!/web/stg/*.pck
+!/web/breakout/*.pck
 
 # OS junk
 .DS_Store
