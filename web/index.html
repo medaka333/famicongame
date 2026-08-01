@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ゲーム選択</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #000;
+    font-family: "Courier New", monospace;
+    color: #fff;
+    overflow: hidden;
+    image-rendering: pixelated;
+  }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6vh;
+    background: radial-gradient(circle at 50% 30%, #10182c 0%, #000 70%);
+  }
+  h1 {
+    font-size: clamp(20px, 5vw, 40px);
+    letter-spacing: 0.1em;
+    color: #fff;
+    text-shadow: 0 0 8px #4ad, 0 0 2px #fff;
+    margin: 0;
+  }
+  .menu {
+    display: flex; gap: 6vw;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .card {
+    width: min(38vw, 300px);
+    aspect-ratio: 4 / 3;
+    background: #111;
+    border: 4px solid #555;
+    border-radius: 4px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-decoration: none;
+    color: #fff;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+    padding: 4vw;
+  }
+  .card:hover, .card:focus, .card.selected {
+    border-color: #ff0;
+    box-shadow: 0 0 24px #ff08;
+    transform: scale(1.05);
+  }
+  .card .icon {
+    font-size: clamp(36px, 8vw, 64px);
+    margin-bottom: 1vh;
+  }
+  .card .name {
+    font-size: clamp(16px, 3vw, 26px);
+    letter-spacing: 0.05em;
+  }
+  .card .desc {
+    font-size: clamp(10px, 1.8vw, 14px);
+    color: #999;
+    margin-top: 0.5vh;
+  }
+  .hint {
+    color: #666;
+    font-size: clamp(10px, 1.8vw, 14px);
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+  <h1>GAME SELECT</h1>
+  <div class="menu" id="menu">
+    <a class="card" href="stg/index.html" data-idx="0">
+      <div class="icon">🚀</div>
+      <div class="name">STG</div>
+      <div class="desc">縦スクロールシューティング</div>
+    </a>
+    <a class="card" href="breakout/index.html" data-idx="1">
+      <div class="icon">🧱</div>
+      <div class="name">BREAKOUT</div>
+      <div class="desc">ブロック崩し</div>
+    </a>
+  </div>
+  <div class="hint">タップ / クリックで選択</div>
+
+<script>
+  // 十字キー+決定でも選べるように（キーボード来場者向け）
+  const cards = Array.from(document.querySelectorAll('.card'));
+  let sel = 0;
+  function render() {
+    cards.forEach((c, i) => c.classList.toggle('selected', i === sel));
+  }
+  render();
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      sel = (sel + 1) % cards.length; render();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      sel = (sel - 1 + cards.length) % cards.length; render();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      cards[sel].click();
+    }
+  });
+</script>
+</body>
+</html>

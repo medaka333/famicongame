@@ -3,7 +3,9 @@
 
 # Exports / builds
 /build/
-/web/
+/web/*
+!/web/index.html
+!/web/.gitignore
 /export/
 *.exe
 *.pck
