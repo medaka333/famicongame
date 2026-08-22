@@ -46,14 +46,5 @@ offset_left = 8.0
 offset_top = 196.0
 offset_right = 248.0
 offset_bottom = 214.0
-text = "Ｊ：けってい　↑↓：せんたく"
-horizontal_alignment = 1
-
-[node name="HelpLabel" type="Label" parent="."]
-offset_left = 8.0
-offset_top = 216.0
-offset_right = 248.0
-offset_bottom = 234.0
-theme_override_font_sizes/font_size = 10
-text = "← →：パドル　Ｊ：ボールはっしゃ"
+text = ""
 horizontal_alignment = 1

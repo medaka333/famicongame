@@ -3,12 +3,16 @@ extends Node2D
 
 var _sel: int = 0
 var _idle: float = 0.0
+var _input_lock: float = 0.0
 
 func _ready() -> void:
 	GameState.is_demo = false
 	AudioManager.stop_bgm()
 	GameState.difficulty = GameState.Diff.KIDS
 	$HiScoreLabel.text = "ハイスコア  %06d" % GameState.hi_score
+	if GameState.just_finished_game:
+		GameState.just_finished_game = false
+		_input_lock = 2.0
 	_refresh()
 	_blink()
 
@@ -17,6 +21,7 @@ func _refresh() -> void:
 	$AdultLabel.text = ("> " if _sel == 1 else "  ") + "おとな（むずかしい）"
 
 func _process(delta: float) -> void:
+	_input_lock = maxf(_input_lock - delta, 0.0)
 	_idle += delta
 	if _idle >= 12.0:
 		GameState.is_demo = true
@@ -32,8 +37,12 @@ func _blink() -> void:
 		await get_tree().create_timer(0.4).timeout
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _input_lock > 0.0:
+		return
 	_idle = 0.0
-	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_C:
+	if event.is_action_pressed("pause"):
+		get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
+	elif event is InputEventKey and event.pressed and event.physical_keycode == KEY_C:
 		get_tree().change_scene_to_file("res://scenes/ui/KeyConfig.tscn")
 	elif event.is_action_pressed("move_up") or event.is_action_pressed("move_down"):
 		_sel = 1 - _sel

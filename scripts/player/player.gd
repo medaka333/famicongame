@@ -6,6 +6,8 @@ class_name Player
 const FIRE_COOLDOWN := [0.18, 0.12, 0.10]
 const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
+const KITAMAEBUNE_TEX := preload("res://assets/sprites/player_kitamaebune.png")
+const KITAMAEBUNE_WIDTH := 56.0
 
 @onready var _visual: Sprite2D = $Visual
 @onready var _muzzle: Marker2D = $Muzzle
@@ -19,6 +21,8 @@ var _demo_decide_t: float = 0.0
 var _demo_tx: float = 128.0
 var _demo_ty: float = 160.0
 var _demo_avoiding: bool = false
+var _col_shape: RectangleShape2D
+var _base_hitbox: float = 4.0
 
 func _ready() -> void:
 	add_to_group(Const.G_PLAYER)
@@ -28,10 +32,10 @@ func _ready() -> void:
 		| Const.bit(Const.L_ITEM)
 	area_entered.connect(_on_area_entered)
 	_visual.texture = PixelArt.get_tex("player0")
-	var sh := $CollisionShape2D.shape as RectangleShape2D
-	if sh:
-		var hb := GameState.player_hitbox()
-		sh.size = Vector2(hb, hb)
+	_col_shape = $CollisionShape2D.shape as RectangleShape2D
+	_base_hitbox = GameState.player_hitbox()
+	if _col_shape:
+		_col_shape.size = Vector2(_base_hitbox, _base_hitbox)
 	GameState.power_changed.connect(_on_power)
 	_on_power(GameState.power_level)
 
@@ -52,7 +56,8 @@ func _physics_process(delta: float) -> void:
 	if _anim_t >= 0.08:
 		_anim_t = 0.0
 		_anim_f = 1 - _anim_f
-		_visual.texture = PixelArt.get_tex("player" + str(_anim_f))
+		if GameState.power_level < GameState.MAX_POWER:
+			_visual.texture = PixelArt.get_tex("player" + str(_anim_f))
 
 # --- デモ AI ---
 
@@ -244,4 +249,17 @@ func _on_power(lv: int) -> void:
 		1:
 			_visual.self_modulate = Color(1, 1, 0.6)
 		_:
-			_visual.self_modulate = Color(1, 0.7, 0.7)
+			_visual.self_modulate = Color(1, 0.7, 0.7)   # 元の3段階目カラー（北前船画像に置き換え中は未使用・将来再利用可）
+	if lv >= GameState.MAX_POWER:
+		_visual.texture = KITAMAEBUNE_TEX
+		_visual.self_modulate = Color(1, 1, 1)
+		var s := KITAMAEBUNE_WIDTH / KITAMAEBUNE_TEX.get_width()
+		_visual.scale = Vector2(s, s)
+		if _col_shape:
+			var hb := _base_hitbox * (KITAMAEBUNE_WIDTH / 16.0)
+			_col_shape.size = Vector2(hb, hb)
+	else:
+		_visual.scale = Vector2(1, 1)
+		_visual.texture = PixelArt.get_tex("player" + str(_anim_f))
+		if _col_shape:
+			_col_shape.size = Vector2(_base_hitbox, _base_hitbox)

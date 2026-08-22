@@ -102,6 +102,14 @@ const SPARK := [
 	"..WWWW..", ".YYWWYY.", "...YY...", "..Y..Y..",
 ]
 
+# ゲーム選択画面用アイコン: ブロック+ボール+パドル
+const ICON_BREAKOUT := [
+	"................", "................", "..RRRROOOOYYYY..", "..RRRROOOOYYYY..",
+	"................", "................", ".......WW.......", ".......WW.......",
+	"................", "................", "................", "................",
+	"................", "..CCCCCCCCCCCC..", "..CCCCCCCCCCCC..", "................",
+]
+
 var _cache: Dictionary = {}
 
 func _ready() -> void:
@@ -124,6 +132,7 @@ func _ready() -> void:
 	_cache["spark"] = _make(SPARK)
 	# 自機カラーの破片（敵弾のオレンジと区別するためシアン白）
 	_cache["spark_blue"] = _make(_recolor(SPARK, "Y", "C"))
+	_cache["icon_breakout"] = _make(ICON_BREAKOUT)
 
 func get_tex(name: String) -> Texture2D:
 	return _cache.get(name)

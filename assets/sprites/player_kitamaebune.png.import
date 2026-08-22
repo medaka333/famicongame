@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c525vhnkla2ix"
-path="res://.godot/imported/index.png-61fa13d4c339384837c8299dd94fb280.ctex"
+uid="uid://x4q6y81uxqe5"
+path="res://.godot/imported/player_kitamaebune.png-3dd0465c5dc95487f031dfe95554c70b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://web/stg/index.png"
-dest_files=["res://.godot/imported/index.png-61fa13d4c339384837c8299dd94fb280.ctex"]
+source_file="res://assets/sprites/player_kitamaebune.png"
+dest_files=["res://.godot/imported/player_kitamaebune.png-3dd0465c5dc95487f031dfe95554c70b.ctex"]
 
 [params]
 

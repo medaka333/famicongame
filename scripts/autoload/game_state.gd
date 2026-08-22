@@ -22,6 +22,7 @@ const MAX_POWER := 2
 
 var difficulty: int = Diff.KIDS
 var is_demo: bool = false
+var just_finished_game: bool = false   # ゲームオーバー/オールクリア直後のタイトル遷移フラグ（連打誤爆防止の入力ロック判定用）
 var score: int = 0
 var hi_score: int = 0
 var lives: int = 3

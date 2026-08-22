@@ -3,7 +3,10 @@ extends Node2D
 
 @onready var _world: Node2D = $World
 
+const QUIT_HOLD_TIME := 3.0
+
 var _trauma: float = 0.0
+var _quit_hold_t: float = 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -41,6 +44,13 @@ func _process(delta: float) -> void:
 	elif _world.position != Vector2.ZERO:
 		_world.position = Vector2.ZERO
 
+	if Input.is_action_pressed("pause"):
+		_quit_hold_t += delta
+		if _quit_hold_t >= QUIT_HOLD_TIME:
+			get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
+	else:
+		_quit_hold_t = 0.0
+
 func _unhandled_input(event: InputEvent) -> void:
 	if GameState.is_demo:
 		if event.is_pressed():
@@ -59,4 +69,5 @@ func _on_game_over() -> void:
 func _on_all_clear() -> void:
 	await get_tree().create_timer(5.0).timeout
 	AudioManager.stop_bgm()
+	GameState.just_finished_game = true
 	get_tree().change_scene_to_file("res://scenes/ui/Title.tscn")

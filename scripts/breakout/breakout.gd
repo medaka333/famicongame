@@ -91,6 +91,8 @@ var _ball_speed := 116.0
 var _trauma := 0.0
 var _trans := false
 var _paddle = null
+const QUIT_HOLD_TIME := 3.0
+var _quit_hold_t: float = 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -103,9 +105,9 @@ func _ready() -> void:
 	_start_stage(1)
 
 func _stage_list() -> Array:
-	if GameState.difficulty == GameState.Diff.KIDS:
-		return [STAGE1, STAGE2, STAGE_BOSS]
-	return [STAGE1, STAGE2, STAGE3, STAGE4, STAGE_BOSS]
+	# 5ステージ(STAGE3/STAGE4含む)は長すぎるため3ステージ構成に短縮。
+	# STAGE3/STAGE4は後で使うかもしれないので定義自体は残してある。
+	return [STAGE1, STAGE2, STAGE_BOSS]
 
 # --- ステージ進行 ---
 
@@ -402,7 +404,8 @@ func _all_clear() -> void:
 	_save_hi()
 	$HUD/CenterMsg.text = "オールクリアー！"
 	$HUD/CenterMsg.show()
-	await get_tree().create_timer(5.0).timeout
+	await get_tree().create_timer(1.0).timeout
+	GameState.just_finished_game = true
 	get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
 
 func _game_over() -> void:
@@ -416,7 +419,8 @@ func _game_over() -> void:
 	balls.clear()
 	$HUD/CenterMsg.text = "ゲームオーバー"
 	$HUD/CenterMsg.show()
-	await get_tree().create_timer(3.0).timeout
+	await get_tree().create_timer(1.0).timeout
+	GameState.just_finished_game = true
 	get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
 
 # --- ボス通知 ---
@@ -548,6 +552,13 @@ func _process(delta: float) -> void:
 		$World.position = Vector2(randf_range(-amt, amt), randf_range(-amt, amt))
 	elif $World.position != Vector2.ZERO:
 		$World.position = Vector2.ZERO
+
+	if Input.is_action_pressed("pause"):
+		_quit_hold_t += delta
+		if _quit_hold_t >= QUIT_HOLD_TIME:
+			get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
+	else:
+		_quit_hold_t = 0.0
 	if not _boss_bullets.is_empty():
 		var pr := _paddle_rect()
 		for s in _boss_bullets.duplicate():
@@ -603,7 +614,7 @@ func _show_boss_bar(mx: int) -> void:
 	_update_boss_bar(mx, mx)
 
 func _update_boss_bar(cur: int, mx: int) -> void:
-	$HUD/BossBar.size.x = 240.0 * float(cur) / float(mx)
+	$HUD/BossBar.size.x = 180.0 * float(cur) / float(mx)
 
 func _hide_boss_bar() -> void:
 	$HUD/BossBar.hide()

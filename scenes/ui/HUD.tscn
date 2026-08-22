@@ -52,14 +52,6 @@ offset_right = 110.0
 offset_bottom = 238.0
 text = "残機 3"
 
-[node name="Help" type="Label" parent="."]
-offset_left = 110.0
-offset_top = 220.0
-offset_right = 254.0
-offset_bottom = 238.0
-text = "Ａ：ショット"
-horizontal_alignment = 2
-
 [node name="DemoLabel" type="Label" parent="."]
 visible = false
 offset_left = 8.0

@@ -15,7 +15,7 @@ offset_left = 8.0
 offset_top = 50.0
 offset_right = 248.0
 offset_bottom = 68.0
-text = "O-RANGE SHOOTER"
+text = "オーレンジシューター"
 horizontal_alignment = 1
 
 [node name="KidsLabel" type="Label" parent="."]
@@ -34,29 +34,12 @@ offset_bottom = 130.0
 text = "おとな（むずかしい）"
 horizontal_alignment = 1
 
-[node name="HelpLabel" type="Label" parent="."]
-offset_left = 8.0
-offset_top = 142.0
-offset_right = 248.0
-offset_bottom = 160.0
-text = "十字キー：移動　Ａ：ショット"
-horizontal_alignment = 1
-
-[node name="ConfigLabel" type="Label" parent="."]
-visible = false
-offset_left = 8.0
-offset_top = 164.0
-offset_right = 248.0
-offset_bottom = 182.0
-text = "C：パッド設定"
-horizontal_alignment = 1
-
 [node name="PressStart" type="Label" parent="."]
 offset_left = 8.0
 offset_top = 188.0
 offset_right = 248.0
 offset_bottom = 206.0
-text = "上下：選択　Ａ：スタート"
+text = ""
 horizontal_alignment = 1
 
 [node name="HiScoreLabel" type="Label" parent="."]

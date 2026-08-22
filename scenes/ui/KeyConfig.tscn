@@ -62,6 +62,12 @@ offset_top = 131.0
 offset_right = 216.0
 offset_bottom = 145.0
 
+[node name="Row6" type="Label" parent="."]
+offset_left = 40.0
+offset_top = 146.0
+offset_right = 216.0
+offset_bottom = 160.0
+
 [node name="Footer" type="Label" parent="."]
 offset_left = 8.0
 offset_top = 210.0

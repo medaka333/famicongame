@@ -1,15 +1,22 @@
 extends Node2D
-## ブロック崩し専用タイトル。KIDS/ADULT 選択 → Breakout へ。STG の Title には戻らない。
+## ブロック崩し専用タイトル。KIDS/ADULT 選択 → Breakout へ。Esc で GameSelect に戻る。
 
 var _sel := 0
+var _input_lock: float = 0.0
 
 func _ready() -> void:
 	GameState.is_demo = false
 	AudioManager.stop_bgm()
 	GameState.difficulty = GameState.Diff.KIDS
 	$HiScoreLabel.text = "ハイスコア  %06d" % _load_hi()
+	if GameState.just_finished_game:
+		GameState.just_finished_game = false
+		_input_lock = 2.0
 	_refresh()
 	_blink()
+
+func _process(delta: float) -> void:
+	_input_lock = maxf(_input_lock - delta, 0.0)
 
 func _load_hi() -> int:
 	var c := ConfigFile.new()
@@ -31,10 +38,14 @@ func _blink() -> void:
 		await get_tree().create_timer(0.4).timeout
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("move_up") or event.is_action_pressed("move_down"):
+	if _input_lock > 0.0:
+		return
+	if event.is_action_pressed("pause"):
+		get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
+	elif event.is_action_pressed("move_up") or event.is_action_pressed("move_down"):
 		_sel = 1 - _sel
 		_refresh()
 		AudioManager.play_se("cursor")
-	elif event.is_action_pressed("shoot") or event.is_action_pressed("pause"):
+	elif event.is_action_pressed("shoot") or event.is_action_pressed("ui_select_start"):
 		GameState.difficulty = _sel
 		get_tree().change_scene_to_file("res://scenes/breakout/Breakout.tscn")
