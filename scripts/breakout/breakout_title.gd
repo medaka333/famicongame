@@ -3,6 +3,7 @@ extends Node2D
 
 var _sel := 0
 var _input_lock: float = 0.0
+var _idle: float = 0.0
 
 func _ready() -> void:
 	GameState.is_demo = false
@@ -17,6 +18,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_input_lock = maxf(_input_lock - delta, 0.0)
+	_idle += delta
+	if _idle >= 12.0:
+		GameState.is_demo = true
+		get_tree().change_scene_to_file("res://scenes/breakout/Breakout.tscn")
 
 func _load_hi() -> int:
 	var c := ConfigFile.new()
@@ -40,6 +45,7 @@ func _blink() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _input_lock > 0.0:
 		return
+	_idle = 0.0
 	if event.is_action_pressed("pause"):
 		get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
 	elif event.is_action_pressed("move_up") or event.is_action_pressed("move_down"):

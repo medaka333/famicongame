@@ -95,3 +95,44 @@ offset_top = 222.0
 offset_right = 128.0
 offset_bottom = 238.0
 text = "残機 3"
+
+[node name="Tutorial" type="Control" parent="HUD"]
+visible = false
+offset_right = 256.0
+offset_bottom = 240.0
+
+[node name="Dim" type="ColorRect" parent="HUD/Tutorial"]
+offset_right = 256.0
+offset_bottom = 240.0
+color = Color(0, 0, 0, 0.45)
+
+[node name="Move" type="Label" parent="HUD/Tutorial"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+offset_left = 8.0
+offset_top = 96.0
+offset_right = 248.0
+offset_bottom = 114.0
+text = "←→ で パドルを うごかそう"
+horizontal_alignment = 1
+
+[node name="Shoot" type="Label" parent="HUD/Tutorial"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+offset_left = 8.0
+offset_top = 118.0
+offset_right = 248.0
+offset_bottom = 136.0
+text = "Ｊで ボールを はなそう"
+horizontal_alignment = 1
+
+[node name="Skip" type="Label" parent="HUD/Tutorial"]
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+offset_left = 8.0
+offset_top = 200.0
+offset_right = 248.0
+offset_bottom = 216.0
+theme_override_font_sizes/font_size = 10
+text = "スタートで スキップ"
+horizontal_alignment = 1

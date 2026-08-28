@@ -9,6 +9,7 @@ var base_speed := 116.0
 var stuck := true
 var _thru_t := 0.0
 var _big_t := 0.0
+var _trail_t := 0.0
 var _root: Node
 var _paddle: Node
 
@@ -58,6 +59,11 @@ func _physics_process(delta: float) -> void:
 		return
 	if velocity.length() > 0.01:
 		velocity = velocity.normalized() * speed
+	if is_big() or is_thru():
+		_trail_t -= delta
+		if _trail_t <= 0.0:
+			_trail_t = 0.025
+			_spawn_trail()
 	var steps := 1 + int(velocity.length() * delta / R)
 	var sub := delta / float(steps)
 	for _i in steps:
@@ -70,6 +76,21 @@ func _physics_process(delta: float) -> void:
 			lost.emit(self)
 			return
 	queue_redraw()
+
+func _spawn_trail() -> void:
+	# でかボール/貫通ボール専用の残像(パワーアップ状態を画面全体で分かりやすくする)。
+	var parent := get_parent()
+	if not parent:
+		return
+	var s := Sprite2D.new()
+	s.texture = PixelArt.get_tex("spark")
+	s.position = position
+	s.modulate = Color(1.0, 0.5, 1.0, 0.4) if _thru_t > 0.0 else Color(1.0, 0.7, 0.2, 0.4)
+	s.scale = Vector2(R / 4.0, R / 4.0)
+	parent.add_child(s)
+	var tw := s.create_tween()
+	tw.tween_property(s, "modulate:a", 0.0, 0.22)
+	tw.tween_callback(s.queue_free)
 
 func _walls() -> void:
 	var hit := false

@@ -17,6 +17,8 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 config/name="famicongame"
 config/version="1.0.0"
 run/main_scene="res://scenes/ui/GameSelect.tscn"
+run/main_scene.breakout="res://scenes/breakout/BreakoutTitle.tscn"
+run/main_scene.stg="res://scenes/ui/Title.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -28,6 +30,7 @@ AudioManager="*res://scripts/autoload/audio_manager.gd"
 InputManager="*res://scripts/autoload/input_manager.gd"
 BulletPool="*res://scripts/autoload/bullet_pool.gd"
 PixelArt="*res://scripts/autoload/pixel_art.gd"
+SessionClient="*res://scripts/autoload/session_client.gd"
 
 [display]
 

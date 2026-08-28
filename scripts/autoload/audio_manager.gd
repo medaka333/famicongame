@@ -20,7 +20,7 @@ func _ready() -> void:
 	for i in 8:
 		var p := AudioStreamPlayer.new()
 		p.bus = &"Master"
-		p.volume_db = -4.0
+		p.volume_db = SE_VOLUME_DB
 		add_child(p)
 		_se_players.append(p)
 	_bgm_player = AudioStreamPlayer.new()
@@ -33,9 +33,15 @@ func _ready() -> void:
 	_se["powerup"]   = _arp([523.0, 659.0, 784.0, 1047.0], 0.05, 80)
 	_se["miss"]      = _square(420.0, 80.0, 0.42, 0.5, 90)
 	_se["cursor"]    = _square(880.0, 1100.0, 0.04, 0.5, 50)
+	_se["boss_hit"]  = _thud(220.0, 45.0, 0.16, 95)
 
 	_bgm["stage"] = _compose(STAGE_MEL, STAGE_BASS, 0.15, 80, 40)
 	_bgm["boss"]  = _compose(BOSS_MEL, BOSS_BASS, 0.12, 80, 42)
+
+const SE_VOLUME_DB := -4.0
+const SE_VOLUME_BOOST := {
+	"boss_hit": 6.0, # 被弾音が聞こえづらいので2倍(+6dB)の音量にする
+}
 
 func play_se(name: String) -> void:
 	var s: AudioStreamWAV = _se.get(name)
@@ -44,6 +50,7 @@ func play_se(name: String) -> void:
 	for p in _se_players:
 		if not p.playing:
 			p.stream = s
+			p.volume_db = SE_VOLUME_DB + SE_VOLUME_BOOST.get(name, 0.0)
 			p.play()
 			return
 
@@ -72,6 +79,23 @@ func _square(fs: float, fe: float, dur: float, duty: float, vol: int) -> AudioSt
 		phase = fmod(phase + f / RATE, 1.0)
 		var s := 1.0 if phase < duty else -1.0
 		d[i] = int(s * (1.0 - t) * vol) & 0xff
+	return _wav(d, false)
+
+func _thud(fs: float, fe: float, dur: float, vol: int) -> AudioStreamWAV:
+	# 低い減衰トーン+立ち上がりのノイズを混ぜた「重い」打撃音(ボス被弾用)。
+	var n := maxi(1, int(RATE * dur))
+	var d := PackedByteArray()
+	d.resize(n)
+	var phase := 0.0
+	for i in n:
+		var t := float(i) / n
+		var f := lerpf(fs, fe, t)
+		phase = fmod(phase + f / RATE, 1.0)
+		var tone := 1.0 if phase < 0.5 else -1.0
+		var noise := (randf() * 2.0 - 1.0) * maxf(0.0, 1.0 - t * 6.0)
+		var env := 1.0 - t
+		var s := (tone * 0.7 + noise * 0.5) * env
+		d[i] = int(clampf(s * vol, -124.0, 124.0)) & 0xff
 	return _wav(d, false)
 
 func _noise(dur: float, vol: int) -> AudioStreamWAV:

@@ -15,7 +15,22 @@ var _elapsed: float = 0.0
 
 func _ready() -> void:
 	GameState.boss_defeated.connect(_on_boss_defeated)
-	call_deferred("_start_stage")
+
+func start() -> void:
+	## チュートリアル終了後(デモ時は即座)に外部(game.gd)から呼ばれ、ステージ1を開始する。
+	_start_stage()
+
+func jump_to_stage(n: int) -> void:
+	## デバッグ専用: 指定ステージ(1始まり)へ強制ジャンプ。画面上の敵・弾・アイテムをクリアしてから開始する。
+	if n < 1 or n > _stage_count():
+		return
+	_stage = n - 1
+	for group_name in ["enemy_container", "bullet_container", "item_container"]:
+		var c := get_tree().get_first_node_in_group(group_name) as Node2D
+		if c:
+			for child in c.get_children():
+				child.queue_free()
+	_start_stage()
 
 func _stage_count() -> int:
 	return mini(stages.size(), GameState.max_stages())

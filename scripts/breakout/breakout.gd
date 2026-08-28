@@ -70,8 +70,9 @@ const STAGE4 := {
 }
 const STAGE_BOSS := {
 	"layout": [
-		"....HHHHHH....",
-		"..............",
+		"OO..........OO",
+		"..HHHHHHHHHH..",
+		"OO..........OO",
 	],
 	"boss": true,
 	"bg": Color(0.12, 0.02, 0.04),
@@ -85,7 +86,6 @@ var stage := 1
 var balls: Array = []
 var blocks: Array = []
 var boss = null
-var _boss_bullets: Array = []
 var _remaining := 0
 var _ball_speed := 116.0
 var _trauma := 0.0
@@ -93,21 +93,47 @@ var _trans := false
 var _paddle = null
 const QUIT_HOLD_TIME := 3.0
 var _quit_hold_t: float = 0.0
+var _quit_triggered: bool = false
+var _tutorial := true
+var _tut_moved := false
+var _tut_shot := false
+
+# --- デバッグ専用(エクスポート版では無効): Backspace長押し=タイトルへ、
+# キー「1」「2」「3」長押し=該当ステージへジャンプ(今いるステージのキーは無反応、他はどこからでも可) ---
+const DEBUG_HOLD_TIME := 0.8
+const DBG_STAGE_KEYS := {1: KEY_1, 2: KEY_2, 3: KEY_3}
+var _dbg_title_t := 0.0
+var _dbg_stage_t := {1: 0.0, 2: 0.0, 3: 0.0}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	randomize()
-	_ball_speed = 116.0 * GameState.bullet_speed_mul()
+	_ball_speed = 116.0 * 1.2 * GameState.bullet_speed_mul() # ゲームスピード1.2倍
 	lives = GameState.start_lives()
 	_load_hi()
 	_update_score()
 	_update_lives()
-	_start_stage(1)
+	if GameState.is_demo:
+		_tutorial = false
+		_start_stage(1)
+		_run_demo()
+	else:
+		# チュートリアル中はパドル/ボールだけ練習用に出し、ブロック配置(ステージ1本編)は
+		# チュートリアル終了後(_end_tutorial)まで待つ。
+		_ensure_paddle()
+		_spawn_ball()
+		$HUD/Tutorial.show()
 
 func _stage_list() -> Array:
 	# 5ステージ(STAGE3/STAGE4含む)は長すぎるため3ステージ構成に短縮。
 	# STAGE3/STAGE4は後で使うかもしれないので定義自体は残してある。
 	return [STAGE1, STAGE2, STAGE_BOSS]
+
+func _run_demo() -> void:
+	await get_tree().create_timer(22.0).timeout
+	if GameState.is_demo:
+		GameState.is_demo = false
+		get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
 
 # --- ステージ進行 ---
 
@@ -124,10 +150,6 @@ func _start_stage(n: int) -> void:
 		if is_instance_valid(b):
 			b.queue_free()
 	balls.clear()
-	for s in _boss_bullets:
-		if is_instance_valid(s):
-			s.queue_free()
-	_boss_bullets.clear()
 	for it in get_tree().get_nodes_in_group(Const.G_ITEMS):
 		it.queue_free()
 	if boss and is_instance_valid(boss):
@@ -181,7 +203,7 @@ func _ensure_paddle() -> void:
 	if _paddle == null or not is_instance_valid(_paddle):
 		_paddle = Paddle.new()
 		var bh := 22.0 if GameState.difficulty == GameState.Diff.KIDS else 16.0
-		_paddle.setup(bh)
+		_paddle.setup(bh, self)
 		$World.add_child(_paddle)
 		_paddle.position = Vector2(128, 212)
 
@@ -191,17 +213,23 @@ func _spawn_ball() -> void:
 	_paddle.reset_size()
 	var b = Ball.new()
 	b.setup(self, _paddle, _ball_speed)
+	# 生成直後、最初の_physics_processが走る前に1フレーム(0,0)(画面左上)に
+	# 描画されてしまうのを防ぐため、パドル直上の位置を最初から明示的に設定する。
+	b.position = Vector2(_paddle.position.x, _paddle.position.y - 8.0)
 	$World.add_child(b)
 	b.lost.connect(_on_ball_lost)
 	balls.append(b)
+	if GameState.is_demo:
+		b.launch(0.0) # デモ中は誰も発射ボタンを押さないので自動発射する
 
 func _spawn_boss() -> void:
 	boss = Boss.new()
-	var hp := 40 if GameState.difficulty == GameState.Diff.ADULT else 22
+	var hp := 40 if GameState.difficulty == GameState.Diff.ADULT else 22 # ボスHPを2倍に
 	boss.setup(self, hp)
 	$World.add_child(boss)
 	boss.position = Vector2(128, 50)
 	_show_boss_bar(hp)
+	boss_spawn_block_burst(10) # ボス出現時にもまとめて10個射出
 
 # --- 衝突(ボール → ブロック/ボス) §6 ---
 
@@ -246,7 +274,8 @@ func ball_collide(ball) -> void:
 		ball.position = best_closest + best_n * ball.R
 		ball.bounce(best_n)
 		add_score(50)
-		best.take_hit()
+		AudioManager.play_se("boss_hit")
+		best.take_hit(3 if ball.is_big() else 1) # でかボールはボスへのダメージ3倍
 		return
 	if ball.is_thru() and best.breakable:
 		_destroy_block(best)
@@ -291,6 +320,7 @@ func _destroy_block(b) -> void:
 	combo += 1
 	_update_combo()
 	_spark(b.position)
+	_debris(b.position, b.color)
 	AudioManager.play_se("explosion")
 	add_shake(0.1)
 	_maybe_drop(b.position)
@@ -301,9 +331,16 @@ func _destroy_block(b) -> void:
 func _maybe_drop(at: Vector2) -> void:
 	if get_tree().get_nodes_in_group(Const.G_ITEMS).size() >= 3:
 		return
-	if randf() < 0.21:
-		# 通常パワーアップは出やすく、1UP(U)は超レア（ドロップの3%）
-		var kind: String = "U" if randf() < 0.03 else ["E", "M", "T", "B"].pick_random()
+	var is_boss_stage := boss != null and is_instance_valid(boss)
+	var drop_chance := 0.21 * 1.5 if is_boss_stage else 0.21 # ボス面はアイテム出現率1.5倍
+	if randf() < drop_chance:
+		var kind: String
+		if is_boss_stage:
+			# 最終ステージ(ボス戦)はマルチボール/でかボール/ワイドパドルのみ出す
+			kind = ["M", "B", "E"].pick_random()
+		else:
+			# 通常パワーアップは出やすく、1UP(U)は超レア（ドロップの3%）
+			kind = "U" if randf() < 0.03 else ["E", "M", "T", "B"].pick_random()
 		var it = Item.new()
 		it.setup(self, kind)
 		$World.add_child(it)
@@ -340,8 +377,8 @@ func _multiball() -> void:
 				return
 			var nb = Ball.new()
 			nb.setup(self, _paddle, b.speed)
+			nb.position = b.position # add_childより前に設定(1フレーム(0,0)に出るのを防ぐ)
 			$World.add_child(nb)
-			nb.position = b.position
 			nb.launch_dir(b.velocity.rotated(ang))
 			nb.lost.connect(_on_ball_lost)
 			balls.append(nb)
@@ -393,18 +430,32 @@ func _stage_clear() -> void:
 	balls.clear()
 	_save_hi()
 	if stage < _stage_list().size():
+		add_shake(0.3)
 		_flash("ステージクリアー！")
-		await get_tree().create_timer(2.5).timeout
+		await _fireworks(4, 1.4)
+		await get_tree().create_timer(0.6).timeout
+		$HUD/CenterMsg.hide()
 		_start_stage(stage + 1)
 	else:
 		_all_clear()
 
 func _all_clear() -> void:
+	SessionClient.consume()
 	AudioManager.stop_bgm()
+	add_shake(0.5)
+	_flash("オールクリアー！")
+	await get_tree().create_timer(0.8).timeout
+	var bonus := lives * 1000 # 残機ボーナス
+	if bonus > 0:
+		_popup("残機ボーナス +%d" % bonus, Vector2(128.0, 150.0), Color(1.0, 0.9, 0.3))
+		add_score(bonus)
+		await get_tree().create_timer(0.8).timeout
 	_save_hi()
-	$HUD/CenterMsg.text = "オールクリアー！"
-	$HUD/CenterMsg.show()
-	await get_tree().create_timer(1.0).timeout
+	await _fireworks(8, 2.5)
+	await get_tree().create_timer(0.7).timeout
+	if SessionClient.is_active():
+		SessionClient.return_to_shell()
+		return
 	GameState.just_finished_game = true
 	get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
 
@@ -417,20 +468,85 @@ func _game_over() -> void:
 		if is_instance_valid(b):
 			b.queue_free()
 	balls.clear()
+	if GameState.is_demo:
+		GameState.is_demo = false
+		get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
+		return
+	SessionClient.consume()
 	$HUD/CenterMsg.text = "ゲームオーバー"
 	$HUD/CenterMsg.show()
 	await get_tree().create_timer(1.0).timeout
+	if SessionClient.is_active():
+		SessionClient.return_to_shell()
+		return
 	GameState.just_finished_game = true
 	get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
 
 # --- ボス通知 ---
 
-func boss_fire(from: Vector2) -> void:
-	var s := Sprite2D.new()
-	s.texture = PixelArt.get_tex("ebullet")
-	s.position = from + Vector2(0, 14)
-	$World.add_child(s)
-	_boss_bullets.append(s)
+const BOSS_BLOCK_LIMIT := 50 ## ボスの増援ブロックが際限なく増えないための上限
+const BOSS_BLOCK_ROW_OFFSET := 5 ## 増援ブロックは通常の配置より5ブロック(=40px)下に出す
+const FESTIVAL_COLORS := [
+	Color8(224, 32, 16),   # 提灯の赤
+	Color8(255, 200, 40),  # 金
+	Color8(255, 255, 255), # 白(紅白)
+]
+
+func boss_spawn_block() -> void:
+	if not (boss and is_instance_valid(boss)):
+		return
+	_launch_boss_block()
+
+func boss_spawn_block_burst(n: int) -> void:
+	# HP半分/4分の1到達時のまとめ射出(演出を派手に)。
+	if not (boss and is_instance_valid(boss)):
+		return
+	add_shake(0.3)
+	for i in n:
+		if not _launch_boss_block():
+			break
+
+func _launch_boss_block() -> bool:
+	# ボスは弾を撃たず、代わりに空いている棚にブロックを増援として射出する(危険物ではなく補充演出)。
+	if blocks.size() >= BOSS_BLOCK_LIMIT:
+		return false
+	var layout: Array = _stage_list()[stage - 1]["layout"]
+	var rows := layout.size()
+	var cols: int = layout[0].length()
+	var sx := (256.0 - cols * 16.0) / 2.0 + 8.0
+	var y0 := 40.0 + BOSS_BLOCK_ROW_OFFSET * 8.0
+	var occupied := {}
+	for b in blocks:
+		if is_instance_valid(b):
+			occupied[b.position] = true
+	var candidates: Array = []
+	for row in rows:
+		for col in cols:
+			var pos := Vector2(sx + col * 16.0, y0 + row * 8.0)
+			if not occupied.has(pos):
+				candidates.append(pos)
+	if candidates.is_empty():
+		return false
+	var pos: Vector2 = candidates.pick_random()
+	var seg := rows - 1 - int((pos.y - y0) / 8.0)
+	var b = Block.new()
+	$World.add_child(b)
+	b.position = boss.position
+	b.alive = false # 飛んでいる間はボールと衝突しない
+	b.setup(FESTIVAL_COLORS.pick_random(), 10 + seg * 10, 1, true)
+	blocks.append(b)
+	_remaining += 1
+	var tw := b.create_tween()
+	tw.tween_property(b, "position", pos, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(_land_boss_block.bind(b, pos))
+	return true
+
+func _land_boss_block(b, pos: Vector2) -> void:
+	if not is_instance_valid(b):
+		return
+	b.alive = true
+	_spark(pos)
+	AudioManager.play_se("cursor")
 
 func boss_hp_changed(cur: int, mx: int) -> void:
 	_update_boss_bar(cur, mx)
@@ -445,10 +561,6 @@ func boss_defeated() -> void:
 	AudioManager.play_se("explosion")
 	for i in 6:
 		_explode(Vector2(randf_range(96, 160), randf_range(32, 72)), i % 3)
-	for s in _boss_bullets:
-		if is_instance_valid(s):
-			s.queue_free()
-	_boss_bullets.clear()
 	for b in blocks:
 		if is_instance_valid(b):
 			b.queue_free()
@@ -480,6 +592,24 @@ func _spark(at: Vector2) -> void:
 	tw.tween_property(s, "scale", Vector2(2, 2), 0.18)
 	tw.parallel().tween_property(s, "modulate:a", 0.0, 0.2)
 	tw.tween_callback(s.queue_free)
+
+func _debris(at: Vector2, col: Color) -> void:
+	# ブロックの色のカケラを放射状+重力落下風に飛ばす(破壊の手応えを強化)。
+	var n := 5
+	for i in n:
+		var ang := randf_range(0.0, TAU)
+		var spd := randf_range(10.0, 24.0)
+		var s := Sprite2D.new()
+		s.texture = PixelArt.get_tex("spark")
+		s.position = at
+		s.modulate = col
+		s.scale = Vector2(0.7, 0.7)
+		$World/FX.add_child(s)
+		var dst := at + Vector2(cos(ang), sin(ang)) * spd + Vector2(0, randf_range(8.0, 16.0))
+		var tw := s.create_tween()
+		tw.tween_property(s, "position", dst, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(s, "modulate:a", 0.0, 0.45)
+		tw.tween_callback(s.queue_free)
 
 # --- パワーアップ取得演出（何を取ったか分かりやすく）---
 
@@ -546,6 +676,10 @@ func add_shake(a: float) -> void:
 	_trauma = minf(_trauma + a, 1.0)
 
 func _process(delta: float) -> void:
+	if _tutorial:
+		if Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"):
+			_tut_moved = true
+			_update_tutorial()
 	if _trauma > 0.0:
 		_trauma = maxf(_trauma - delta * 1.5, 0.0)
 		var amt := _trauma * _trauma * 5.0
@@ -555,37 +689,109 @@ func _process(delta: float) -> void:
 
 	if Input.is_action_pressed("pause"):
 		_quit_hold_t += delta
-		if _quit_hold_t >= QUIT_HOLD_TIME:
-			get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
+		if _quit_hold_t >= QUIT_HOLD_TIME and not _quit_triggered:
+			_quit_triggered = true
+			if SessionClient.is_active():
+				SessionClient.consume()
+				SessionClient.return_to_shell()
+			else:
+				get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
 	else:
 		_quit_hold_t = 0.0
-	if not _boss_bullets.is_empty():
-		var pr := _paddle_rect()
-		for s in _boss_bullets.duplicate():
-			if not is_instance_valid(s):
-				_boss_bullets.erase(s)
-				continue
-			s.position.y += 130.0 * delta
-			if pr.has_point(s.position):
-				if _paddle and is_instance_valid(_paddle):
-					_paddle.shrink(3.0)
-				AudioManager.play_se("miss")
-				_boss_bullets.erase(s)
-				s.queue_free()
-			elif s.position.y > 244.0:
-				_boss_bullets.erase(s)
-				s.queue_free()
+	if OS.is_debug_build():
+		_process_debug_keys(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if GameState.is_demo:
+		if event.is_pressed():
+			GameState.is_demo = false
+			get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
+		return
+	if _tutorial and event.is_action_pressed("pause"):
+		_end_tutorial()
+		return
 	if event.is_action_pressed("shoot"):
+		if _tutorial:
+			_tut_shot = true
+			_update_tutorial()
+		# チュートリアルを終えるシュートは、そのまま練習用ボールを実際に発射する
+		# シュートでもある(プレイヤーに「発射される瞬間」を必ず見せる)。
 		for b in balls:
 			if is_instance_valid(b) and b.stuck:
 				b.launch(0.0)
 
-func _paddle_rect() -> Rect2:
+# --- チュートリアル(初回操作練習) ---
+
+func _update_tutorial() -> void:
+	if not _tutorial:
+		return
+	$HUD/Tutorial/Move.modulate = Color(0.4, 1.0, 0.4) if _tut_moved else Color(1, 1, 1)
+	$HUD/Tutorial/Shoot.modulate = Color(0.4, 1.0, 0.4) if _tut_shot else Color(1, 1, 1)
+	if _tut_moved and _tut_shot:
+		_end_tutorial()
+
+func _end_tutorial() -> void:
+	_tutorial = false
+	$HUD/Tutorial.hide()
+	# _start_stage(1)は呼ばない: それだと練習用のパドル/ボールを破棄して新しいボールを
+	# 作り直すため、発射の瞬間が見せられない(または再生成直後の未確定位置から発射される)。
+	# 練習用のパドル/ボールをそのまま使い、3秒カウントダウンの後にブロックを出す。
+	_start_stage_after_countdown()
+
+func _start_stage_after_countdown() -> void:
+	_trans = true # カウントダウン中にボールが落ちても残機を減らさない
+	var c: Label = $HUD/CenterMsg
+	for n in [3, 2, 1]:
+		c.text = "%d" % n
+		c.show()
+		c.pivot_offset = c.size / 2.0
+		c.scale = Vector2(2.4, 2.4)
+		c.modulate.a = 0.0
+		var tw := c.create_tween()
+		tw.tween_property(c, "scale", Vector2(1.0, 1.0), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(c, "modulate:a", 1.0, 0.12)
+		await get_tree().create_timer(1.0).timeout
+	c.scale = Vector2(1.0, 1.0)
+	c.modulate.a = 1.0
+	_trans = false
+	# チュートリアルで撃ったボールはここで消し、パドルも中央の初期位置に戻してから
+	# 新しいボールをパドル上に乗せ直す(本編はいつも同じ状態で始まる)。
+	for b in balls:
+		if is_instance_valid(b):
+			b.queue_free()
+	balls.clear()
 	if _paddle and is_instance_valid(_paddle):
-		return Rect2(_paddle.position.x - _paddle.half_w, _paddle.position.y - 4.0, _paddle.half_w * 2.0, 8.0)
-	return Rect2()
+		_paddle.position = Vector2(128, 212)
+	_spawn_ball()
+	var data: Dictionary = STAGE1
+	$BG.color = data["bg"]
+	_spawn_blocks(data["layout"])
+	AudioManager.play_bgm("stage")
+	_update_stage()
+	_flash("ステージ %d" % stage)
+	SessionClient.begin_play()
+
+# --- デバッグ専用ショートカット(OS.is_debug_build()時のみ有効) ---
+
+func _process_debug_keys(delta: float) -> void:
+	if Input.is_physical_key_pressed(KEY_BACKSPACE):
+		_dbg_title_t += delta
+		if _dbg_title_t >= DEBUG_HOLD_TIME:
+			_dbg_title_t = 0.0
+			get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
+	else:
+		_dbg_title_t = 0.0
+	for n in DBG_STAGE_KEYS:
+		if _trans or n == stage:
+			_dbg_stage_t[n] = 0.0
+			continue
+		if Input.is_physical_key_pressed(DBG_STAGE_KEYS[n]):
+			_dbg_stage_t[n] += delta
+			if _dbg_stage_t[n] >= DEBUG_HOLD_TIME:
+				_dbg_stage_t[n] = 0.0
+				_start_stage(n)
+		else:
+			_dbg_stage_t[n] = 0.0
 
 # --- HUD ---
 
@@ -624,9 +830,31 @@ func _flash(t: String) -> void:
 	var c: Label = $HUD/CenterMsg
 	c.text = t
 	c.show()
+	c.pivot_offset = c.size / 2.0
+	c.scale = Vector2(2.0, 2.0)
+	c.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	var tw := c.create_tween()
+	tw.tween_property(c, "scale", Vector2(1.0, 1.0), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(c, "modulate:a", 1.0, 0.12)
 	await get_tree().create_timer(2.0).timeout
 	if c.text == t and not _trans:
 		c.hide()
+
+const FIREWORK_COLORS := [
+	Color(1.0, 0.3, 0.3), Color(1.0, 0.8, 0.2), Color(0.3, 0.8, 1.0),
+	Color(0.4, 1.0, 0.4), Color(1.0, 0.4, 1.0),
+]
+
+func _fireworks(count: int, duration: float) -> void:
+	# クリア演出用: 画面の色々な場所で爆発+カラフルなバーストを連発する。
+	var interval := duration / float(count)
+	for i in count:
+		var at := Vector2(randf_range(24.0, 232.0), randf_range(30.0, 180.0))
+		_explode(at, randi() % 3)
+		_burst(at, FIREWORK_COLORS.pick_random())
+		add_shake(0.15)
+		AudioManager.play_se("explosion")
+		await get_tree().create_timer(interval).timeout
 
 # --- ハイスコア(STG 非干渉: [breakout] セクション) ---
 
