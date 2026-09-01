@@ -47,7 +47,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	_idle = 0.0
 	if event.is_action_pressed("pause"):
-		get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
+		# キオスクモードでは内蔵のGameSelectに落とさず、シェル(受付連携の選択画面)へ戻す。
+		# タイトル時点ではbegin-play前なのでプレイ回数は消費されない。
+		if SessionClient.is_active():
+			SessionClient.return_to_shell()
+		else:
+			get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
 	elif event.is_action_pressed("move_up") or event.is_action_pressed("move_down"):
 		_sel = 1 - _sel
 		_refresh()
