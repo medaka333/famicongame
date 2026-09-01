@@ -73,6 +73,10 @@ func _process(delta: float) -> void:
 			_quit_triggered = true
 			if SessionClient.is_active():
 				SessionClient.consume()
+				# HTTPRequestは呼んだフレームでは送信されないため、すぐ遷移すると
+				# consumeが届かず中断した1回が消化されない。ゲームオーバー経路と
+				# 同様に1拍待ってから戻る。
+				await get_tree().create_timer(0.5).timeout
 				SessionClient.return_to_shell()
 			else:
 				get_tree().change_scene_to_file("res://scenes/ui/GameSelect.tscn")
