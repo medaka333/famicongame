@@ -94,6 +94,15 @@ var _paddle = null
 const QUIT_HOLD_TIME := 3.0
 var _quit_hold_t: float = 0.0
 var _quit_triggered: bool = false
+# --- 1プレイの所要時間の調整(issue #5) ---
+## こどもモードで、残りブロックがこの数以下になったらステージクリアにする。
+## ブロック崩しは残り数個を追いかける時間が一番長く(計測でステージ所要時間の33〜54%)、
+## そこを飛ばすためのもの。実測でこども1プレイの中央値が282秒→217秒に縮んだ。
+const KIDS_AUTO_CLEAR_REMAIN := 3
+## 実際に使うしきい値。0=無効(おとなモードは従来どおり最後の1個まで壊す)。
+var auto_clear_remain := 0
+var _clearing := false
+
 var _tutorial := true
 var _tut_moved := false
 var _tut_shot := false
@@ -110,6 +119,7 @@ func _ready() -> void:
 	randomize()
 	_ball_speed = 116.0 * 1.2 * GameState.bullet_speed_mul() # ゲームスピード1.2倍
 	lives = GameState.start_lives()
+	auto_clear_remain = KIDS_AUTO_CLEAR_REMAIN if GameState.difficulty == GameState.Diff.KIDS else 0
 	_load_hi()
 	_update_score()
 	_update_lives()
@@ -140,6 +150,7 @@ func _run_demo() -> void:
 func _start_stage(n: int) -> void:
 	stage = n
 	_trans = false
+	_clearing = false
 	combo = 1
 	_update_combo()
 	for b in blocks:
@@ -420,16 +431,21 @@ func _check_clear() -> void:
 		return
 	if boss != null and is_instance_valid(boss):
 		return
-	if _remaining > 0:
+	if _remaining > auto_clear_remain:
 		return
 	_stage_clear()
 
 func _stage_clear() -> void:
+	if _clearing:
+		return
+	_clearing = true
 	_trans = true
+	# 掃除演出の途中でボールが残ブロックに当たると _check_clear が再入するため、先に片付ける。
 	for b in balls:
 		if is_instance_valid(b):
 			b.queue_free()
 	balls.clear()
+	await _sweep_remaining_blocks()
 	_save_hi()
 	if stage < _stage_list().size():
 		add_shake(0.3)
@@ -440,6 +456,43 @@ func _stage_clear() -> void:
 		_start_stage(stage + 1)
 	else:
 		_all_clear()
+
+## auto_clear_remain で残ったブロックを、左から順に連鎖爆発させて一気に片付ける。
+## 「まだ残ってるのに終わった」ではなく「ぜんぶ吹き飛ばした」に見せるための演出。
+func _sweep_remaining_blocks() -> void:
+	var left: Array = []
+	for b in blocks:
+		if is_instance_valid(b) and b.alive:
+			left.append(b)
+	if left.is_empty():
+		return
+	left.sort_custom(func(a, b): return a.position.x < b.position.x)
+	add_shake(0.8)
+	_flash("ぜんぶ こわした！")
+	var bonus := 0
+	for i in left.size():
+		var b = left[i]
+		if not is_instance_valid(b):
+			continue
+		b.alive = false
+		if b.breakable:
+			_remaining -= 1
+		bonus += b.score
+		_explode(b.position, i % 3)
+		_burst(b.position, b.color)
+		_debris(b.position, b.color)
+		AudioManager.play_se("explosion")
+		add_shake(0.3)
+		blocks.erase(b)
+		b.queue_free()
+		await get_tree().create_timer(0.12).timeout
+	_remaining = maxi(_remaining, 0)
+	if bonus > 0:
+		add_score(bonus)
+		# 中央メッセージ(CenterMsg: y=104〜126)と重なって両方読めなくなるため、
+		# 既存の残機ボーナスと同じ y=150 に出す。
+		_popup("ボーナス +%d" % bonus, Vector2(128.0, 150.0), Color(1.0, 0.9, 0.3))
+	await get_tree().create_timer(0.7).timeout
 
 func _all_clear() -> void:
 	SessionClient.consume()
