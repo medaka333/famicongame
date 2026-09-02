@@ -339,8 +339,10 @@ func _maybe_drop(at: Vector2) -> void:
 			# 最終ステージ(ボス戦)はマルチボール/でかボール/ワイドパドルのみ出す
 			kind = ["M", "B", "E"].pick_random()
 		else:
-			# 通常パワーアップは出やすく、1UP(U)は超レア（ドロップの3%）
-			kind = "U" if randf() < 0.03 else ["E", "M", "T", "B"].pick_random()
+			# 1UP(U)は1プレイの所要時間を伸ばすため抽選から除外した(issue #1)。
+			# アイテム定義(bk_item.gd の "U"・apply_item・ITEM_NAME)は残してあるので、
+			# 戻すときはこの行を `"U" if randf() < 0.03 else [...]` に戻すだけでよい。
+			kind = ["E", "M", "T", "B"].pick_random()
 		var it = Item.new()
 		it.setup(self, kind)
 		$World.add_child(it)
