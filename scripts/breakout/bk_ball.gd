@@ -7,6 +7,8 @@ var velocity := Vector2.ZERO
 var speed := 116.0
 var base_speed := 116.0
 var stuck := true
+## ボスへ連続でダメージを入れないための間隔(breakout.gd が設定・ここで減らす)
+var boss_hit_cd := 0.0
 var _thru_t := 0.0
 var _big_t := 0.0
 var _trail_t := 0.0
@@ -47,6 +49,8 @@ func launch_dir(v: Vector2) -> void:
 		velocity = v.normalized() * speed
 
 func _physics_process(delta: float) -> void:
+	if boss_hit_cd > 0.0:
+		boss_hit_cd -= delta
 	if _thru_t > 0.0:
 		_thru_t -= delta
 	if _big_t > 0.0:

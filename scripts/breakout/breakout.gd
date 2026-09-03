@@ -1,6 +1,8 @@
 extends Node2D
 ## ブロック崩し ルート。進行・状態・HUD更新・shake・衝突集約。
-## STG 非干渉: GameState は読むだけ(difficulty/is_demo/start_lives/bullet_speed_mul)。
+## STG 非干渉: GameState は difficulty / is_demo しか読まない。
+## 残機とボール速度は START_LIVES / KIDS_BALL_SPEED_MUL としてこちらに持つ
+## (GameState の start_lives / bullet_speed_mul は STG と共用のため触らない)。
 ## score/lives/hi は自前管理。ハイスコアは user://save.cfg [breakout] に保存。計画書 docs/BREAKOUT_PLAN.md
 
 const Paddle := preload("res://scripts/breakout/bk_paddle.gd")
@@ -22,8 +24,11 @@ const COLORS := {
 	"P": Color8(152, 80, 248),
 }
 
-# STAGE1: 松葉ガニ。R/O=甲羅と脚、Y=目、左右対称。14列。
-const STAGE1 := {
+# 松葉ガニ。R/O=甲羅と脚、Y=目、左右対称。14列。
+# 硬さ(R=2HP / Y=3HP)はこのレイアウト固有。以前はステージ番号(stage == 1)で判定していたが、
+# 順番を入れ替えると硬さだけ取り残されるため、レイアウト側に持たせた。
+const STAGE_CRAB := {
+	"block_hp": {"R": 2, "Y": 3},
 	"layout": [
 		"..R........R..",
 		"..RR.OOOO.RR..",
@@ -36,7 +41,7 @@ const STAGE1 := {
 	],
 	"bg": Color(0.04, 0.04, 0.10),
 }
-const STAGE2 := {
+const STAGE_STRIPE := {
 	"layout": [
 		"..HHHHHHHHHH..",
 		".RRRRRRRRRRRR.",
@@ -99,6 +104,15 @@ var _quit_triggered: bool = false
 ## ブロック崩しは残り数個を追いかける時間が一番長く(計測でステージ所要時間の33〜54%)、
 ## そこを飛ばすためのもの。実測でこども1プレイの中央値が282秒→217秒に縮んだ。
 const KIDS_AUTO_CLEAR_REMAIN := 5
+## 開始残機。GameState.start_lives() は STG と共用で こども5 / おとな3 だが、
+## ブロック崩しではこどもが残機をほとんど失わず簡単すぎたため、両モードとも3に統一した。
+## (STG側の残機は変えていない)
+const START_LIVES := 3
+## こどもモードのボール速度倍率。GameState.bullet_speed_mul() は STG の敵弾速度と共用で
+## こども0.6倍だが、ブロック崩しではこどもが簡単すぎた(デモAIのノーミス率90%・残機をほぼ
+## 失わない)ため 0.7倍に上げた。所要時間も 239 → 199秒 (-17%) に縮む。
+## (STG側の弾速は変えていない)
+const KIDS_BALL_SPEED_MUL := 0.7
 ## 実際に使うしきい値。0=無効(おとなモードは従来どおり最後の1個まで壊す)。
 var auto_clear_remain := 0
 var _clearing := false
@@ -108,17 +122,21 @@ var _clearing := false
 # ブロックを壊したときしか落ちてこない。つまり増援ブロックは壁であると同時に
 # アイテムの供給源でもあり、単純に減らすとボス戦は逆に長くなる(計測で+44%)。
 # そこで「増援は減らす。そのかわり増援ブロックは必ずアイテムを落とす」に変更した。
-## ボス出現時にまとめて出す個数(旧10)
-var boss_spawn_burst := 6
+## ボス出現時にまとめて出す個数(旧10 -> 6 -> 8)
+var boss_spawn_burst := 8
 ## 定期召喚の間隔(秒)(旧 2.0〜3.0)
 var boss_spawn_min := 5.0
 var boss_spawn_max := 7.0
+## 定期召喚1回で出す個数(旧1個)
+var boss_spawn_count := 3
 ## HP半分 / 4分の1 到達時にまとめて出す個数。0 = 出さない(旧 各10)
 var boss_burst_half := 0
 var boss_burst_quarter := 0
 ## ボスが召喚したブロックを壊したときのアイテムドロップ率。0未満 = 通常のボス面ドロップ率。
-## 増援を減らしたぶんのアイテム供給を保つため一度100%にしたが、出過ぎだったので70%に下げた。
-var boss_block_drop_chance := 0.7
+## 増援を減らしたぶんのアイテム供給を保つため一度100%にしたが、出過ぎだったので
+## 100% -> 70% -> 60% -> 45% と試したが、45%は減り方が小さい割にボス戦が
+## 58→65秒(こども)/72→86秒(おとな)と伸びたため60%に戻した。
+var boss_block_drop_chance := 0.6
 
 # --- ボス戦の歯ごたえ(issue #8) ---
 ## ボス面で落ちるアイテムの構成
@@ -155,6 +173,14 @@ var boss_barrier_auto_max := 16.0
 var boss_barrier_auto_duration := 1.5
 ## でかボールでボスを殴ったときのダメージ(通常のボールは1)
 var boss_big_damage := 3
+## 1UP(U)の出現率。通常ステージのドロップのうちこの割合がUになる。
+## こどもモードは1プレイが伸びるので0(出さない)。おとなは1プレイに1〜2個出る値。
+const ADULT_ONE_UP_CHANCE := 0.075
+var one_up_chance := 0.0
+## 同じボールがボスに連続でダメージを入れられる最短間隔(秒)。
+## 狙いは「接触が数フレーム続いたときの多重ヒットを潰す」ことだけ。0.25秒にすると
+## マルチボール中の正常なヒットまで弾いてボス戦が69→83秒に伸びたため0.1秒にした。
+const BALL_BOSS_HIT_INTERVAL := 0.1
 ## でかボール(B)の持続時間(秒)
 var big_duration := 8.0
 
@@ -172,9 +198,11 @@ var _dbg_stage_t := {1: 0.0, 2: 0.0, 3: 0.0}
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	randomize()
-	_ball_speed = 116.0 * 1.2 * GameState.bullet_speed_mul() # ゲームスピード1.2倍
-	lives = GameState.start_lives()
-	auto_clear_remain = KIDS_AUTO_CLEAR_REMAIN if GameState.difficulty == GameState.Diff.KIDS else 0
+	var kids := GameState.difficulty == GameState.Diff.KIDS
+	_ball_speed = 116.0 * 1.2 * (KIDS_BALL_SPEED_MUL if kids else 1.0) # ゲームスピード1.2倍
+	lives = START_LIVES
+	auto_clear_remain = KIDS_AUTO_CLEAR_REMAIN if kids else 0
+	one_up_chance = 0.0 if kids else ADULT_ONE_UP_CHANCE
 	_load_hi()
 	_update_score()
 	_update_lives()
@@ -192,7 +220,9 @@ func _ready() -> void:
 func _stage_list() -> Array:
 	# 5ステージ(STAGE3/STAGE4含む)は長すぎるため3ステージ構成に短縮。
 	# STAGE3/STAGE4は後で使うかもしれないので定義自体は残してある。
-	return [STAGE1, STAGE2, STAGE_BOSS]
+	# 松葉ガニは硬いブロックが多く(必要ヒット数76回)、横縞(61回)より難しいため、
+	# やさしい横縞を1面、松葉ガニを2面にしている。
+	return [STAGE_STRIPE, STAGE_CRAB, STAGE_BOSS]
 
 func _run_demo() -> void:
 	await get_tree().create_timer(22.0).timeout
@@ -224,7 +254,7 @@ func _start_stage(n: int) -> void:
 	_hide_boss_bar()
 	var data: Dictionary = _stage_list()[n - 1]
 	$BG.color = data["bg"]
-	_spawn_blocks(data["layout"])
+	_spawn_blocks(data["layout"], data.get("block_hp", {}))
 	_ensure_paddle()
 	if data.get("boss", false):
 		_spawn_boss()
@@ -235,7 +265,8 @@ func _start_stage(n: int) -> void:
 	_update_stage()
 	_flash("ステージ %d" % n)
 
-func _spawn_blocks(layout: Array) -> void:
+## hp_map: 記号ごとのHP(例 {"R": 2})。指定がない記号は1HP。
+func _spawn_blocks(layout: Array, hp_map: Dictionary = {}) -> void:
 	_remaining = 0
 	var rows := layout.size()
 	for row in rows:
@@ -249,6 +280,7 @@ func _spawn_blocks(layout: Array) -> void:
 			var b = Block.new()
 			$World.add_child(b)
 			b.position = Vector2(sx + col * 16.0, 40.0 + row * 8.0)
+			b.dest = b.position
 			var seg := rows - 1 - row
 			if ch == "K":
 				b.setup(Color(0.62, 0.62, 0.68), 0, 1, false)
@@ -256,11 +288,7 @@ func _spawn_blocks(layout: Array) -> void:
 				b.setup(Color(0.82, 0.82, 0.88), 30 + seg * 10, 2, true)
 				_remaining += 1
 			else:
-				var hp_ := 1
-				if stage == 1 and ch == "R":
-					hp_ = 2
-				elif stage == 1 and ch == "Y":
-					hp_ = 3
+				var hp_ := int(hp_map.get(ch, 1))
 				b.setup(COLORS.get(ch, Color.WHITE), 10 + seg * 10, hp_, true)
 				_remaining += 1
 			blocks.append(b)
@@ -294,6 +322,7 @@ func _spawn_boss() -> void:
 	boss.setup(self, hp)
 	boss.spawn_min = boss_spawn_min
 	boss.spawn_max = boss_spawn_max
+	boss.spawn_count = boss_spawn_count
 	boss.burst_half = boss_burst_half
 	boss.burst_quarter = boss_burst_quarter
 	boss_barrier_damage = maxi(3, int(round(float(hp) / BARRIER_DAMAGE_RATIO)))
@@ -352,7 +381,12 @@ func ball_collide(ball) -> void:
 		ball.bounce(best_n)
 		add_score(50)
 		AudioManager.play_se("boss_hit")
-		best.take_hit(boss_big_damage if ball.is_big() else 1) # でかボールはボスへのダメージ増
+		# ボスは横に動くので、ほぼ真上に飛ぶボールの側面にボスが寄っていくと、
+		# 跳ね返してもすぐまた接触して毎フレームダメージが入りうる。同じボールからの
+		# 連続ヒットには短い間隔を設ける(通常は1秒以上空くので普通のプレイには影響しない)。
+		if ball.boss_hit_cd <= 0.0:
+			ball.boss_hit_cd = BALL_BOSS_HIT_INTERVAL
+			best.take_hit(boss_big_damage if ball.is_big() else 1) # でかボールはダメージ増
 		return
 	if ball.is_thru() and best.breakable:
 		_destroy_block(best)
@@ -418,10 +452,9 @@ func _maybe_drop(at: Vector2, from_boss: bool = false) -> void:
 			# 最終ステージ(ボス戦)はマルチボール/でかボール/ワイドパドルのみ出す
 			kind = boss_item_pool.pick_random()
 		else:
-			# 1UP(U)は1プレイの所要時間を伸ばすため抽選から除外した(issue #1)。
-			# アイテム定義(bk_item.gd の "U"・apply_item・ITEM_NAME)は残してあるので、
-			# 戻すときはこの行を `"U" if randf() < 0.03 else [...]` に戻すだけでよい。
-			kind = ["E", "M", "T", "B"].pick_random()
+			# 1UP(U)は1プレイの所要時間を伸ばすため、こどもモードでは出さない(issue #1)。
+			# おとなモードのみ、1プレイに1〜2個出る程度の確率で復活させている。
+			kind = "U" if randf() < one_up_chance else ["E", "M", "T", "B"].pick_random()
 		var it = Item.new()
 		it.setup(self, kind)
 		$World.add_child(it)
@@ -615,10 +648,12 @@ const FESTIVAL_COLORS := [
 	Color8(255, 255, 255), # 白(紅白)
 ]
 
-func boss_spawn_block() -> void:
+func boss_spawn_block(count: int = 1) -> void:
 	if not (boss and is_instance_valid(boss)):
 		return
-	_launch_boss_block()
+	for i in count:
+		if not _launch_boss_block():
+			break
 
 func boss_spawn_block_burst(n: int) -> void:
 	# HP半分/4分の1到達時のまとめ射出(演出を派手に)。
@@ -638,10 +673,12 @@ func _launch_boss_block() -> bool:
 	var cols: int = layout[0].length()
 	var sx := (256.0 - cols * 16.0) / 2.0 + 8.0
 	var y0 := 40.0 + BOSS_BLOCK_ROW_OFFSET * 8.0
+	# 飛行中のブロックは position がボスの位置なので、着地予定(dest)で埋まり判定をする。
+	# position で見ると同じフレームにまとめて撃ったとき同じ枠を重複して選んでしまう。
 	var occupied := {}
 	for b in blocks:
 		if is_instance_valid(b):
-			occupied[b.position] = true
+			occupied[b.dest] = true
 	var candidates: Array = []
 	for row in rows:
 		for col in cols:
@@ -658,6 +695,7 @@ func _launch_boss_block() -> bool:
 	b.alive = false # 飛んでいる間はボールと衝突しない
 	b.setup(FESTIVAL_COLORS.pick_random(), 10 + seg * 10, 1, true)
 	b.from_boss = true
+	b.dest = pos
 	blocks.append(b)
 	_remaining += 1
 	var tw := b.create_tween()
@@ -763,11 +801,11 @@ func _debris(at: Vector2, col: Color) -> void:
 # --- パワーアップ取得演出（何を取ったか分かりやすく）---
 
 const ITEM_NAME := {
+	"U": "残機１ＵＰ！",
 	"E": "ワイド！",
 	"M": "ボール＋２！",
 	"T": "つらぬき！",
 	"B": "でかボール！",
-	"U": "残機１ＵＰ！",
 }
 
 func _powerup_fx(kind: String) -> void:
@@ -916,9 +954,11 @@ func _start_stage_after_countdown() -> void:
 	if _paddle and is_instance_valid(_paddle):
 		_paddle.position = Vector2(128, 212)
 	_spawn_ball()
-	var data: Dictionary = STAGE1
+	# ここでSTAGE1を直接指すと、面の順番を変えたときにチュートリアル明けだけ
+	# 別の面が出てしまう。必ず1面目(_stage_list()[0])を使う。
+	var data: Dictionary = _stage_list()[0]
 	$BG.color = data["bg"]
-	_spawn_blocks(data["layout"])
+	_spawn_blocks(data["layout"], data.get("block_hp", {}))
 	AudioManager.play_bgm("stage")
 	_update_stage()
 	_flash("ステージ %d" % stage)

@@ -11,6 +11,9 @@ var color := Color.WHITE
 var alive := true
 ## ボスが増援として召喚したブロックか(アイテムドロップ率を変えるため)
 var from_boss := false
+## 最終的に置かれる位置。増援ブロックは飛行中 position がボスの位置になるため、
+## 「どの枠を使う予定か」はこちらで持つ(重複配置の判定に使う)。
+var dest := Vector2.ZERO
 
 func setup(col: Color, sc: int, hp_: int, breakable_: bool) -> void:
 	color = col

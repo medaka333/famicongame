@@ -9,6 +9,8 @@ var max_hp := 40
 ## 増援ブロックの召喚間隔(秒)。大きいほどゆるい。
 var spawn_min := 2.0
 var spawn_max := 3.0
+## 1回の召喚で出す個数
+var spawn_count := 1
 ## HPが半分 / 4分の1 に達したときにまとめて出す個数。0 = 出さない。
 var burst_half := 10
 var burst_quarter := 10
@@ -111,7 +113,7 @@ func _physics_process(delta: float) -> void:
 	if _spawn_t <= 0.0:
 		_spawn_t = randf_range(spawn_min, spawn_max)
 		if _root and is_instance_valid(_root):
-			_root.boss_spawn_block()
+			_root.boss_spawn_block(spawn_count)
 	if _flash_t > 0.0:
 		_flash_t -= delta
 		_spr.modulate = _flash_col if int(_flash_t * 30.0) % 2 == 0 else Color.WHITE
