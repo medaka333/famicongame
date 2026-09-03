@@ -98,10 +98,65 @@ var _quit_triggered: bool = false
 ## こどもモードで、残りブロックがこの数以下になったらステージクリアにする。
 ## ブロック崩しは残り数個を追いかける時間が一番長く(計測でステージ所要時間の33〜54%)、
 ## そこを飛ばすためのもの。実測でこども1プレイの中央値が282秒→217秒に縮んだ。
-const KIDS_AUTO_CLEAR_REMAIN := 3
+const KIDS_AUTO_CLEAR_REMAIN := 5
 ## 実際に使うしきい値。0=無効(おとなモードは従来どおり最後の1個まで壊す)。
 var auto_clear_remain := 0
 var _clearing := false
+
+# --- ボスの増援ブロック(issue #2). 数値は _spawn_boss でボスに渡す ---
+# ボス戦の速さは「ボールが何本あるか」でほぼ決まり、ボールを増やすマルチボールは
+# ブロックを壊したときしか落ちてこない。つまり増援ブロックは壁であると同時に
+# アイテムの供給源でもあり、単純に減らすとボス戦は逆に長くなる(計測で+44%)。
+# そこで「増援は減らす。そのかわり増援ブロックは必ずアイテムを落とす」に変更した。
+## ボス出現時にまとめて出す個数(旧10)
+var boss_spawn_burst := 6
+## 定期召喚の間隔(秒)(旧 2.0〜3.0)
+var boss_spawn_min := 5.0
+var boss_spawn_max := 7.0
+## HP半分 / 4分の1 到達時にまとめて出す個数。0 = 出さない(旧 各10)
+var boss_burst_half := 0
+var boss_burst_quarter := 0
+## ボスが召喚したブロックを壊したときのアイテムドロップ率。0未満 = 通常のボス面ドロップ率。
+## 増援を減らしたぶんのアイテム供給を保つため一度100%にしたが、出過ぎだったので70%に下げた。
+var boss_block_drop_chance := 0.7
+
+# --- ボス戦の歯ごたえ(issue #8) ---
+## ボス面で落ちるアイテムの構成
+var boss_item_pool: Array = ["M", "B", "E"]
+
+# --- アイテムの出現率 ---
+## 通常ステージでブロックを1個壊したときにアイテムが落ちる確率
+var drop_chance := 0.21
+## ボス面での倍率。以前は1.5倍にしていたが、ボス面だけでアイテムが16個(1プレイ33個の
+## 約半分)降っておりマルチボールで同時7本まで増えていたため、倍率をやめて通常と同率にした。
+var boss_drop_mul := 1.0
+## 画面に同時に存在できるアイテム数の上限(これを超えると抽選自体を行わない)
+var item_limit := 3
+## 画面に同時に存在できるボールの上限。多いほどボスが一瞬で溶ける。
+var max_balls := 8
+## ボスHP(難易度別)。
+## おとなは元々40だったが、バリア導入でボス戦が83→113秒に伸びたため30に下げた。
+## HP30+バリアあり(ボス戦86秒/通し259秒)は、HP40+バリアなし(83秒/260秒)とほぼ同じ時間で、
+## バリアの利点(閉じ込めの解除・ボスが自分から行動する)だけが乗る。
+var kids_boss_hp := 22
+var adult_boss_hp := 30
+## ボスが連続でこのダメージを受けるとバリアを張る。
+## 固定値にするとHPの多いおとな(40)でバリア回数が増えすぎ、ボス戦が68秒→132秒に
+## 倍増した。max_hp の約1/6にして、どちらの難易度でも6回程度に揃える。
+## (こども HP22 -> 4 / おとな HP40 -> 7)
+const BARRIER_DAMAGE_RATIO := 6.0
+var boss_barrier_damage := 4
+## バリアの持続時間(秒)
+var boss_barrier_duration := 2.5
+## 自発バリアの間隔(秒)。0以下で無効
+var boss_barrier_auto_min := 10.0
+var boss_barrier_auto_max := 16.0
+## 自発バリアの持続(秒)
+var boss_barrier_auto_duration := 1.5
+## でかボールでボスを殴ったときのダメージ(通常のボールは1)
+var boss_big_damage := 3
+## でかボール(B)の持続時間(秒)
+var big_duration := 8.0
 
 var _tutorial := true
 var _tut_moved := false
@@ -235,12 +290,23 @@ func _spawn_ball() -> void:
 
 func _spawn_boss() -> void:
 	boss = Boss.new()
-	var hp := 40 if GameState.difficulty == GameState.Diff.ADULT else 22 # ボスHPを2倍に
+	var hp := adult_boss_hp if GameState.difficulty == GameState.Diff.ADULT else kids_boss_hp
 	boss.setup(self, hp)
+	boss.spawn_min = boss_spawn_min
+	boss.spawn_max = boss_spawn_max
+	boss.burst_half = boss_burst_half
+	boss.burst_quarter = boss_burst_quarter
+	boss_barrier_damage = maxi(3, int(round(float(hp) / BARRIER_DAMAGE_RATIO)))
+	boss.barrier_damage = boss_barrier_damage
+	boss.barrier_duration = boss_barrier_duration
+	boss.barrier_auto_min = boss_barrier_auto_min
+	boss.barrier_auto_max = boss_barrier_auto_max
+	boss.barrier_auto_duration = boss_barrier_auto_duration
 	$World.add_child(boss)
 	boss.position = Vector2(128, 50)
 	_show_boss_bar(hp)
-	boss_spawn_block_burst(10) # ボス出現時にもまとめて10個射出
+	if boss_spawn_burst > 0:
+		boss_spawn_block_burst(boss_spawn_burst) # ボス出現時にもまとめて射出
 
 # --- 衝突(ボール → ブロック/ボス) §6 ---
 
@@ -286,7 +352,7 @@ func ball_collide(ball) -> void:
 		ball.bounce(best_n)
 		add_score(50)
 		AudioManager.play_se("boss_hit")
-		best.take_hit(3 if ball.is_big() else 1) # でかボールはボスへのダメージ3倍
+		best.take_hit(boss_big_damage if ball.is_big() else 1) # でかボールはボスへのダメージ増
 		return
 	if ball.is_thru() and best.breakable:
 		_destroy_block(best)
@@ -334,21 +400,23 @@ func _destroy_block(b) -> void:
 	_debris(b.position, b.color)
 	AudioManager.play_se("explosion")
 	add_shake(0.1)
-	_maybe_drop(b.position)
+	_maybe_drop(b.position, b.from_boss)
 	blocks.erase(b)
 	b.queue_free()
 	_check_clear()
 
-func _maybe_drop(at: Vector2) -> void:
-	if get_tree().get_nodes_in_group(Const.G_ITEMS).size() >= 3:
+func _maybe_drop(at: Vector2, from_boss: bool = false) -> void:
+	if get_tree().get_nodes_in_group(Const.G_ITEMS).size() >= item_limit:
 		return
 	var is_boss_stage := boss != null and is_instance_valid(boss)
-	var drop_chance := 0.21 * 1.5 if is_boss_stage else 0.21 # ボス面はアイテム出現率1.5倍
-	if randf() < drop_chance:
+	var chance := drop_chance * boss_drop_mul if is_boss_stage else drop_chance
+	if is_boss_stage and from_boss and boss_block_drop_chance >= 0.0:
+		chance = boss_block_drop_chance
+	if randf() < chance:
 		var kind: String
 		if is_boss_stage:
 			# 最終ステージ(ボス戦)はマルチボール/でかボール/ワイドパドルのみ出す
-			kind = ["M", "B", "E"].pick_random()
+			kind = boss_item_pool.pick_random()
 		else:
 			# 1UP(U)は1プレイの所要時間を伸ばすため抽選から除外した(issue #1)。
 			# アイテム定義(bk_item.gd の "U"・apply_item・ITEM_NAME)は残してあるので、
@@ -374,7 +442,7 @@ func apply_item(kind: String) -> void:
 				b.set_thru(8.0)
 		"B":
 			for b in balls:
-				b.set_big(8.0)
+				b.set_big(big_duration)
 		"U":
 			lives += 1
 			_update_lives()
@@ -386,7 +454,7 @@ func _multiball() -> void:
 		if b.stuck:
 			continue
 		for ang in [-0.45, 0.45]:
-			if balls.size() >= 8:
+			if balls.size() >= max_balls:
 				return
 			var nb = Ball.new()
 			nb.setup(self, _paddle, b.speed)
@@ -589,6 +657,7 @@ func _launch_boss_block() -> bool:
 	b.position = boss.position
 	b.alive = false # 飛んでいる間はボールと衝突しない
 	b.setup(FESTIVAL_COLORS.pick_random(), 10 + seg * 10, 1, true)
+	b.from_boss = true
 	blocks.append(b)
 	_remaining += 1
 	var tw := b.create_tween()
@@ -602,6 +671,31 @@ func _land_boss_block(b, pos: Vector2) -> void:
 	b.alive = true
 	_spark(pos)
 	AudioManager.play_se("cursor")
+
+## ボスがバリアを張った瞬間の処理。
+## ボスの上の通路(上壁 y=8 〜 増援ブロックの上端 y=76)にボールが入ると往復し続けて
+## パドルが関与しない時間になるため、ここで全ボールを下向きに弾き出して拾い直させる。
+func boss_barrier_started() -> void:
+	AudioManager.play_se("powerup")
+	add_shake(0.2)
+	# 全ボールを下向きに叩き落とすと「急に全部持っていかれた」感が強すぎたので、
+	# ボスと同じ高さ以上にいるボール(=通路に閉じ込められている側)だけを対象にし、
+	# 下に叩きつけるのではなくボスの左右へ払いのける。速さは変えない。
+	if not (boss and is_instance_valid(boss)):
+		return
+	var by: float = boss.position.y + 18.0     # ボスの下端
+	for b in balls:
+		if not is_instance_valid(b) or b.stuck:
+			continue
+		if b.position.y > by:
+			continue                            # すでに下にいるボールは触らない
+		var away := signf(b.position.x - boss.position.x)
+		if is_zero_approx(away):
+			away = 1.0 if randf() < 0.5 else -1.0
+		b.velocity = Vector2(away * 0.92, 0.39).normalized() * b.speed
+	if boss and is_instance_valid(boss):
+		# ボスの上(y=24付近)はスコア/ハイスコアのHUDと重なって読めなくなるため下に出す。
+		_popup("バリア！", boss.position + Vector2(0.0, 40.0), Color(0.6, 0.85, 1.0))
 
 func boss_hp_changed(cur: int, mx: int) -> void:
 	_update_boss_bar(cur, mx)

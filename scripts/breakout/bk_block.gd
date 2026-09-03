@@ -9,6 +9,8 @@ var breakable := true
 var score := 50
 var color := Color.WHITE
 var alive := true
+## ボスが増援として召喚したブロックか(アイテムドロップ率を変えるため)
+var from_boss := false
 
 func setup(col: Color, sc: int, hp_: int, breakable_: bool) -> void:
 	color = col
