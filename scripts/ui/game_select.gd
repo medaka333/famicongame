@@ -36,5 +36,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_sel = 1 - _sel
 		_refresh()
 		AudioManager.play_se("cursor")
-	elif event.is_action_pressed("shoot") or event.is_action_pressed("ui_select_start"):
+	# 以前は or event.is_action_pressed("ui_select_start") が付いていたが、
+	# そのアクションは project.godot に存在せず、shoot 以外の入力のたびにエラーが
+	# 出ていた(決定自体は shoot の短絡評価で動いていたので気づきにくかった)。
+	# パッドのSTARTは pause に割り当てられており、この画面では「戻る」の意味なので
+	# 決定と衝突する。STARTでの決定は諦めて参照を消した。
+	elif event.is_action_pressed("shoot"):
 		get_tree().change_scene_to_file(DESTS[_sel])
