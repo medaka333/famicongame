@@ -15,8 +15,8 @@ const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
 const KITAMAEBUNE_TEX := preload("res://assets/sprites/player_kitamaebune.png")
 ## 北前船(ワイド)の表示幅。当たり判定もこの幅から算出される(基準16pxに対する倍率)。
-## 56pxでは大きすぎたので48pxに。判定は 14.0 -> 12.0 になる。
-const KITAMAEBUNE_WIDTH := 48.0
+## 56pxでは大きすぎたので10%減の50.4pxに。判定は 14.0 -> 12.6 になる。
+const KITAMAEBUNE_WIDTH := 50.4
 ## フォーカス機の大きさ。通常機より少し大きく、当たり判定も同じ倍率で大きくなる。
 ## 移動速度低下と合わせた枷(ワイドの3.5倍ほどではない)。
 const FOCUS_SCALE := 1.25
