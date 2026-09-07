@@ -96,9 +96,16 @@ var _ball_speed := 116.0
 var _trauma := 0.0
 var _trans := false
 var _paddle = null
+## ゲームオーバー / オールクリアの表示時間(秒)。この間は入力を受け付けない。
+const END_SCREEN_TIME := 8.0
+
 const QUIT_HOLD_TIME := 3.0
 var _quit_hold_t: float = 0.0
 var _quit_triggered: bool = false
+## 終了演出に入ったら true。この間の入力(中断の長押し含む)は全部無視する
+var _finished: bool = false
+## 終了画面で中央メッセージの下に出す補助行(スコア・残機ボーナス)
+var _end_sub: Label = null
 # --- 1プレイの所要時間の調整(issue #5) ---
 ## こどもモードで、残りブロックがこの数以下になったらステージクリアにする。
 ## ブロック崩しは残り数個を追いかける時間が一番長く(計測でステージ所要時間の33〜54%)、
@@ -597,7 +604,9 @@ func _sweep_remaining_blocks() -> void:
 	await get_tree().create_timer(0.7).timeout
 
 func _all_clear() -> void:
+	_finished = true
 	SessionClient.consume()
+	var t0 := Time.get_ticks_msec()
 	AudioManager.stop_bgm()
 	add_shake(0.5)
 	_flash("オールクリアー！")
@@ -608,13 +617,38 @@ func _all_clear() -> void:
 		add_score(bonus)
 		await get_tree().create_timer(0.8).timeout
 	_save_hi()
+	_show_end_sub("スコア %06d" % score)
 	await _fireworks(8, 2.5)
-	await get_tree().create_timer(0.7).timeout
+	await _fireworks(6, 2.0)
+	await _wait_end_screen(t0)
 	if SessionClient.is_active():
 		SessionClient.return_to_shell()
 		return
 	GameState.just_finished_game = true
 	get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
+
+## 終了画面の中央メッセージの下に補助行(スコアなど)を重ねて出す。
+## スコアはHUD左上に小さく出ているだけなので、終了時は中央にも見せる。
+func _show_end_sub(text: String) -> void:
+	if _end_sub == null:
+		_end_sub = Label.new()
+		_end_sub.offset_left = 8.0
+		_end_sub.offset_top = 130.0
+		_end_sub.offset_right = 248.0
+		_end_sub.offset_bottom = 172.0
+		_end_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_end_sub.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+		_end_sub.add_theme_constant_override("outline_size", 5)
+		_end_sub.add_theme_color_override("font_outline_color", Color.BLACK)
+		$HUD.add_child(_end_sub)
+	_end_sub.text = text
+	_end_sub.show()
+
+## 終了画面を END_SCREEN_TIME 秒ちょうど見せる(実時間で計算する)
+func _wait_end_screen(t0_msec: int) -> void:
+	var rest := END_SCREEN_TIME - float(Time.get_ticks_msec() - t0_msec) / 1000.0
+	if rest > 0.0:
+		await get_tree().create_timer(rest).timeout
 
 func _game_over() -> void:
 	_trans = true
@@ -629,10 +663,13 @@ func _game_over() -> void:
 		GameState.is_demo = false
 		get_tree().change_scene_to_file("res://scenes/breakout/BreakoutTitle.tscn")
 		return
+	_finished = true
 	SessionClient.consume()
+	var t0 := Time.get_ticks_msec()
 	$HUD/CenterMsg.text = "ゲームオーバー"
 	$HUD/CenterMsg.show()
-	await get_tree().create_timer(1.0).timeout
+	_show_end_sub("スコア %06d" % score)
+	await _wait_end_screen(t0)
 	if SessionClient.is_active():
 		SessionClient.return_to_shell()
 		return
@@ -875,7 +912,7 @@ func _process(delta: float) -> void:
 	elif $World.position != Vector2.ZERO:
 		$World.position = Vector2.ZERO
 
-	if Input.is_action_pressed("pause"):
+	if Input.is_action_pressed("pause") and not _finished:
 		_quit_hold_t += delta
 		if _quit_hold_t >= QUIT_HOLD_TIME and not _quit_triggered:
 			_quit_triggered = true
@@ -894,6 +931,8 @@ func _process(delta: float) -> void:
 		_process_debug_keys(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _finished:
+		return          # 終了演出中はボタンを押しても何も起きない
 	if GameState.is_demo:
 		if event.is_pressed():
 			GameState.is_demo = false

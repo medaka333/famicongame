@@ -3,11 +3,23 @@ extends Node2D
 
 @onready var _world: Node2D = $World
 
+const ExplosionScene := preload("res://scenes/fx/Explosion.tscn")
+## オールクリアの花火の色(NESパレット寄り)
+const CLEAR_COLORS := [
+	Color8(248, 56, 0), Color8(252, 160, 68), Color8(248, 216, 0),
+	Color8(0, 184, 0), Color8(60, 188, 252), Color8(152, 80, 248),
+]
+
+## ゲームオーバー / オールクリアの表示時間(秒)。この間は入力を受け付けない。
+const END_SCREEN_TIME := 8.0
+
 const QUIT_HOLD_TIME := 3.0
 
 var _trauma: float = 0.0
 var _quit_hold_t: float = 0.0
 var _quit_triggered: bool = false
+## 終了演出に入ったら true。この間の入力(中断の長押し含む)は全部無視する
+var _finished: bool = false
 var _tutorial: bool = true
 var _tut_moved: bool = false
 var _tut_shot: bool = false
@@ -67,7 +79,7 @@ func _process(delta: float) -> void:
 	elif _world.position != Vector2.ZERO:
 		_world.position = Vector2.ZERO
 
-	if Input.is_action_pressed("pause"):
+	if Input.is_action_pressed("pause") and not _finished:
 		_quit_hold_t += delta
 		if _quit_hold_t >= QUIT_HOLD_TIME and not _quit_triggered:
 			_quit_triggered = true
@@ -86,6 +98,8 @@ func _process(delta: float) -> void:
 		_process_debug_keys(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _finished:
+		return          # 終了演出中はボタンを押しても何も起きない
 	if GameState.is_demo:
 		if event.is_pressed():
 			GameState.is_demo = false
@@ -171,19 +185,77 @@ func _on_game_over() -> void:
 		GameState.is_demo = false
 		get_tree().change_scene_to_file("res://scenes/ui/Title.tscn")
 		return
+	_finished = true
 	SessionClient.consume()
-	await get_tree().create_timer(1.3).timeout
+	# 以前は1.3秒待つだけで、キオスクモードでは「ゲームオーバー」の文字すら出ないまま
+	# シェルへ戻っていた。文字を出して END_SCREEN_TIME 秒しっかり見せる。
+	var t0 := Time.get_ticks_msec()
+	$HUD.show_game_over()
+	await _wait_end_screen(t0)
 	if SessionClient.is_active():
 		SessionClient.return_to_shell()
 		return
 	get_tree().change_scene_to_file("res://scenes/ui/GameOver.tscn")
 
+## 終了画面を END_SCREEN_TIME 秒ちょうど見せる(実時間で計算する)
+func _wait_end_screen(t0_msec: int) -> void:
+	var rest := END_SCREEN_TIME - float(Time.get_ticks_msec() - t0_msec) / 1000.0
+	if rest > 0.0:
+		await get_tree().create_timer(rest).timeout
+
 func _on_all_clear() -> void:
+	# デモ中はプレイ回数を消化しない(_on_game_over と同じ扱い)
+	if GameState.is_demo:
+		GameState.is_demo = false
+		AudioManager.stop_bgm()
+		get_tree().change_scene_to_file("res://scenes/ui/Title.tscn")
+		return
+	_finished = true
 	SessionClient.consume()
-	await get_tree().create_timer(5.0).timeout
+	# 以前はここで5秒待つだけで、一番の見せ場に何も起きていなかった。
+	# 花火 → 残機ボーナス → もう一巡花火、で END_SCREEN_TIME 秒を埋める。
+	var t0 := Time.get_ticks_msec()
 	AudioManager.stop_bgm()
+	add_shake(0.6)
+	await _fireworks(10, 2.2)
+	var bonus := GameState.lives * 1000
+	if bonus > 0:
+		GameState.add_score(bonus)
+		AudioManager.play_se("powerup")
+		$HUD.show_all_clear_bonus(bonus)
+		await get_tree().create_timer(1.4).timeout
+	await _fireworks(8, 2.6)
+	await _wait_end_screen(t0)
 	if SessionClient.is_active():
 		SessionClient.return_to_shell()
 		return
 	GameState.just_finished_game = true
 	get_tree().change_scene_to_file("res://scenes/ui/Title.tscn")
+
+## クリア演出: 画面のあちこちで爆発とカラフルなバーストを連発する。
+func _fireworks(count: int, duration: float) -> void:
+	var interval := duration / float(count)
+	for i in count:
+		var at := Vector2(randf_range(28.0, 228.0), randf_range(30.0, 170.0))
+		var e := ExplosionScene.instantiate()
+		e.position = at
+		$World/FXContainer.add_child(e)
+		_burst(at, CLEAR_COLORS.pick_random())
+		add_shake(0.15)
+		AudioManager.play_se("explosion")
+		await get_tree().create_timer(interval).timeout
+
+## 8方向へ飛び散るカラフルな粒
+func _burst(at: Vector2, col: Color) -> void:
+	for i in 8:
+		var ang := TAU * float(i) / 8.0
+		var s := Sprite2D.new()
+		s.texture = PixelArt.get_tex("spark")
+		s.position = at
+		s.modulate = col
+		$World/FXContainer.add_child(s)
+		var dst := at + Vector2(cos(ang), sin(ang)) * 15.0
+		var tw := s.create_tween()
+		tw.tween_property(s, "position", dst, 0.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(s, "modulate:a", 0.0, 0.35)
+		tw.tween_callback(s.queue_free)
