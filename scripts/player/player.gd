@@ -10,7 +10,7 @@ const FIRE_COOLDOWN := [0.18, 0.18, 0.15]
 ## フォーカス時の移動速度倍率。ボスに強いかわりに動きが鈍い、という枷。
 ## 0.75では重すぎたので0.85に。連射を0.18に落とすとワイドとボス撃破時間が並んで
 ## ワイドの上位互換になってしまうため、火力ではなく移動で差をつけている。
-const FOCUS_SPEED_MUL := 0.85
+const FOCUS_SPEED_MUL := 0.8
 const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
 const KITAMAEBUNE_TEX := preload("res://assets/sprites/player_kitamaebune.png")
