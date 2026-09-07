@@ -6,6 +6,9 @@ const BOSS_SCENE := preload("res://scenes/enemies/Boss.tscn")
 
 @export var stages: Array[StageDef] = []
 
+## ザコ時間の終わりごろの湧き間隔の倍率(1.0=変化なし)。時間経過で濃くなる
+const SPAWN_TIGHTEN_END := 0.6
+
 enum Phase { ZAKO, WARNING, BOSS }
 
 var _stage: int = 0
@@ -60,7 +63,11 @@ func _process(delta: float) -> void:
 		return
 	_spawn_t -= delta
 	if _spawn_t <= 0.0:
-		_spawn_t = s.spawn_interval * GameState.spawn_mul()
+		# ザコ時間の経過とともに湧きが濃くなる。時間をかけるほど厳しくなる時間ペナルティ
+		# (ブロック崩しの「反射するほどボールが加速する」に相当)。
+		var progress := clampf(_elapsed / maxf(s.zako_duration * GameState.zako_mul(), 0.01), 0.0, 1.0)
+		var tighten := lerpf(1.0, SPAWN_TIGHTEN_END, progress)
+		_spawn_t = s.spawn_interval * GameState.spawn_mul() * tighten
 		_spawn_one(s)
 
 func _spawn_one(s: StageDef) -> void:

@@ -36,7 +36,10 @@ func bullet_speed_mul() -> float:
 	return 0.6 if difficulty == Diff.KIDS else 1.0
 
 func boss_hp_mul() -> float:
-	return 0.55 if difficulty == Diff.KIDS else 1.0
+	# こどものボス戦は9〜16秒しかなく山場として短すぎたため 0.55 -> 0.75 に上げた。
+	# 自機の火力を下げる前は「HPを上げてもLv2には効かずLv0だけ苦しくなる」状態だったが、
+	# Lv2の火力を Lv0比 4.7倍 -> 1.6倍 に是正したことで素直に効くようになった。
+	return 0.75 if difficulty == Diff.KIDS else 1.0
 
 func spawn_mul() -> float:
 	return 1.3 if difficulty == Diff.KIDS else 1.0
@@ -48,7 +51,10 @@ func player_hitbox() -> float:
 	return 4.0 if difficulty == Diff.KIDS else 8.0
 
 func max_stages() -> int:
-	return 2 if difficulty == Diff.KIDS else 3
+	# こどもは以前2面だったが、回避AIによる実測で1プレイ42秒とすぐ終わってしまい
+	# 物足りなかったため3面に揃えた(ブロック崩しは約210秒)。難易度差は残機・敵弾速度・
+	# ボスHP・ザコ時間など他の8項目でついている。
+	return 3
 
 func reset_run() -> void:
 	score = 0

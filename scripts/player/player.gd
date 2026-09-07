@@ -3,7 +3,10 @@ class_name Player
 ## 自機（M16）。通常操作 / デモ時は AI（敵を狙い、敵弾を避ける）。デモ中も被弾する。
 
 @export var speed: float = 140.0
-const FIRE_COOLDOWN := [0.18, 0.12, 0.10]
+## パワーレベル別の連射間隔。Lv1は「集中砲火」、Lv2(北前船)は「範囲」と性質が違うので
+## 別々に調整している。以前は [0.18, 0.12, 0.10] で、ボスの真下に張り付いて撃つと
+## Lv2が Lv0比 4.7〜6.8倍の速さでボスを溶かしていた(実測)。
+const FIRE_COOLDOWN := [0.18, 0.18, 0.12]
 const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
 const KITAMAEBUNE_TEX := preload("res://assets/sprites/player_kitamaebune.png")
@@ -143,9 +146,12 @@ func _shoot() -> void:
 			_spawn(bullets, _muzzle.global_position + Vector2(-4, 0), Vector2(0, -300))
 			_spawn(bullets, _muzzle.global_position + Vector2(4, 0), Vector2(0, -300))
 		_:
+			# Lv2は「範囲」。斜め弾の角度を ±90 → ±120 に広げ、通常の距離(y=180前後)からは
+			# ボスに当たらないようにした。懐まで潜れば当たるので、当たり判定3.5倍という
+			# 北前船のリスクに見返りが残る。ザコ掃討力は角度が広いぶん上がる。
 			_spawn(bullets, _muzzle.global_position, Vector2(0, -300))
-			_spawn(bullets, _muzzle.global_position + Vector2(-4, 0), Vector2(-90, -290))
-			_spawn(bullets, _muzzle.global_position + Vector2(4, 0), Vector2(90, -290))
+			_spawn(bullets, _muzzle.global_position + Vector2(-4, 0), Vector2(-120, -290))
+			_spawn(bullets, _muzzle.global_position + Vector2(4, 0), Vector2(120, -290))
 	AudioManager.play_se("shot")
 
 func _spawn(container: Node2D, pos: Vector2, vel: Vector2) -> void:
