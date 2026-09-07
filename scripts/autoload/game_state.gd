@@ -4,7 +4,7 @@ extends Node
 signal score_changed(value: int)
 signal hiscore_changed(value: int)
 signal lives_changed(value: int)
-signal power_changed(value: int)
+signal ship_mode_changed(mode: int)
 signal game_over
 
 signal boss_warning
@@ -18,7 +18,12 @@ signal all_clear
 
 enum Diff { KIDS, ADULT }
 
-const MAX_POWER := 2
+## 船のモード(#10)。以前は power_level 0/1/2 の直線的な強化ラダーだったが、
+## Lv2がLv1の上位互換になり「火力の倍率」でしか調整できなかった。
+## 「どちらかを選ぶ」形にして、火力ではなく性質で差をつける。
+##   FOCUS = 正面集中。ボスに強いが移動が遅い
+##   WIDE  = 広角(北前船)。ザコ掃討が速いが当たり判定が大きい
+enum ShipMode { NORMAL, FOCUS, WIDE }
 
 var difficulty: int = Diff.KIDS
 var is_demo: bool = false
@@ -26,7 +31,7 @@ var just_finished_game: bool = false   # ゲームオーバー/オールクリ�
 var score: int = 0
 var hi_score: int = 0
 var lives: int = 3
-var power_level: int = 0
+var ship_mode: int = ShipMode.NORMAL
 
 # --- 難易度パラメータ（KIDS=子供向けにやさしく）---
 func start_lives() -> int:
@@ -59,10 +64,10 @@ func max_stages() -> int:
 func reset_run() -> void:
 	score = 0
 	lives = start_lives()
-	power_level = 0
+	ship_mode = ShipMode.NORMAL
 	score_changed.emit(score)
 	lives_changed.emit(lives)
-	power_changed.emit(power_level)
+	ship_mode_changed.emit(ship_mode)
 
 func add_score(amount: int) -> void:
 	score += amount
@@ -71,17 +76,19 @@ func add_score(amount: int) -> void:
 		hi_score = score
 		hiscore_changed.emit(hi_score)
 
-func add_power() -> void:
-	power_level = mini(power_level + 1, MAX_POWER)
-	power_changed.emit(power_level)
+## アイテム取得。同じモードを取り直しても変化はない(段階の概念をなくしたため)。
+func set_ship_mode(mode: int) -> void:
+	if ship_mode == mode:
+		return
+	ship_mode = mode
+	ship_mode_changed.emit(ship_mode)
 
-func damage_power() -> void:
-	# 被弾時のパワーダウン: こども=1段ダウン / おとな=Lv0リセット
-	if difficulty == Diff.KIDS:
-		power_level = maxi(power_level - 1, 0)
-	else:
-		power_level = 0
-	power_changed.emit(power_level)
+## 被弾時。難易度によらずノーマルに戻る(段階がないので1段ダウンは存在しない)。
+func lose_ship_mode() -> void:
+	if ship_mode == ShipMode.NORMAL:
+		return
+	ship_mode = ShipMode.NORMAL
+	ship_mode_changed.emit(ship_mode)
 
 func lose_life() -> void:
 	if lives <= 0:

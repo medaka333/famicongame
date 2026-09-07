@@ -85,6 +85,8 @@ func _die() -> void:
 		var item_container := get_tree().get_first_node_in_group("item_container") as Node2D
 		if item_container:
 			var item := POWERUP_SCENE.instantiate()
+			# フォーカス / ワイドを半々で落とす(#10)
+			item.setup(GameState.ShipMode.FOCUS if randf() < 0.5 else GameState.ShipMode.WIDE)
 			item_container.add_child(item)
 			item.global_position = global_position
 	AudioManager.play_se("explosion")

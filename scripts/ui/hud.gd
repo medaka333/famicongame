@@ -10,6 +10,8 @@ extends CanvasLayer
 ## 終了画面で中央メッセージの下に出す補助行(スコア・残機ボーナス)。
 ## scene には置かず実行時に作る。
 var _sub: Label
+## 現在の船モードの表示(#10)。ノーマル時は非表示
+var _mode: Label
 
 func _ready() -> void:
 	GameState.score_changed.connect(func(v): _score_label.text = "スコア %06d" % v)
@@ -37,6 +39,18 @@ func _ready() -> void:
 	_sub.add_theme_color_override("font_outline_color", Color.BLACK)
 	_sub.hide()
 	add_child(_sub)
+	_mode = Label.new()
+	_mode.offset_left = 8.0
+	_mode.offset_top = 24.0
+	_mode.offset_right = 248.0
+	_mode.offset_bottom = 40.0
+	_mode.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_mode.add_theme_constant_override("outline_size", 4)
+	_mode.add_theme_color_override("font_outline_color", Color.BLACK)
+	_mode.hide()
+	add_child(_mode)
+	GameState.ship_mode_changed.connect(_on_ship_mode)
+	_on_ship_mode(GameState.ship_mode)
 
 func _on_warning() -> void:
 	_flash("ワーニング！！")
@@ -81,6 +95,19 @@ func show_all_clear_bonus(bonus: int) -> void:
 	_center.show()
 	_sub.text = "残機ボーナス +%d\nスコア %06d" % [bonus, GameState.score]
 	_sub.show()
+
+## 船のモード表示。色は自機やアイテムと合わせる
+func _on_ship_mode(mode: int) -> void:
+	if mode == GameState.ShipMode.FOCUS:
+		_mode.text = "フォーカス"
+		_mode.add_theme_color_override("font_color", Color(0.55, 0.8, 1.0))
+		_mode.show()
+	elif mode == GameState.ShipMode.WIDE:
+		_mode.text = "ワイド"
+		_mode.add_theme_color_override("font_color", Color(1.0, 0.7, 0.35))
+		_mode.show()
+	else:
+		_mode.hide()
 
 func _flash(t: String) -> void:
 	_center.text = t
