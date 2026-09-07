@@ -20,9 +20,10 @@ func _ready() -> void:
 	collision_layer = Const.bit(Const.L_ITEM)
 	collision_mask = Const.bit(Const.L_PLAYER)
 	area_entered.connect(_on_area_entered)
-	$Visual.texture = PixelArt.get_tex("item")
-	# 元の絵が緑なので self_modulate(乗算)では青にもオレンジにもならない。
-	# 種類は _draw() で描く色付きの下地とわくで見分けさせる。
+	# 種類ごとに専用の絵(F / W の文字入り)を使う。
+	# 共通の絵を self_modulate で色分けする案は、元の絵が緑のため機能しなかった。
+	$Visual.texture = PixelArt.get_tex(
+		"item_wide" if mode == GameState.ShipMode.WIDE else "item_focus")
 	queue_redraw()
 
 var _t := 0.0
@@ -30,12 +31,12 @@ var _t := 0.0
 func _color() -> Color:
 	return COL_WIDE if mode == GameState.ShipMode.WIDE else COL_FOCUS
 
-## 種類が分かるよう、絵の後ろに色付きの下地と点滅するわくを描く
+## 落下中に目立つよう、絵の後ろで色付きのわくを点滅させる
 func _draw() -> void:
 	var c := _color()
 	var blink := 0.5 + 0.5 * sin(_t * 10.0)
-	draw_rect(Rect2(-7, -7, 14, 14), Color(c.r, c.g, c.b, 0.85))
-	draw_rect(Rect2(-9, -9, 18, 18), Color(c.r, c.g, c.b, 0.3 + 0.5 * blink), false, 1.0)
+	draw_rect(Rect2(-9, -9, 18, 18), Color(c.r, c.g, c.b, 0.25 + 0.55 * blink), false, 1.0)
+	draw_rect(Rect2(-11, -11, 22, 22), Color(c.r, c.g, c.b, 0.12 + 0.25 * blink), false, 1.0)
 
 func _physics_process(delta: float) -> void:
 	_t += delta

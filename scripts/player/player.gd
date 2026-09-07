@@ -6,7 +6,7 @@ class_name Player
 ## モード別の連射間隔(NORMAL / FOCUS / WIDE の順)。
 ## 以前は [0.18, 0.12, 0.10] の直線的な強化で、ボスの真下に張り付いて撃つと
 ## 最終形態が Lv0比 4.7〜6.8倍の速さでボスを溶かしていた(実測)。
-const FIRE_COOLDOWN := [0.18, 0.15, 0.12]
+const FIRE_COOLDOWN := [0.18, 0.18, 0.15]
 ## フォーカス時の移動速度倍率。ボスに強いかわりに動きが鈍い、という枷。
 ## 0.75では重すぎたので0.85に。連射を0.18に落とすとワイドとボス撃破時間が並んで
 ## ワイドの上位互換になってしまうため、火力ではなく移動で差をつけている。
@@ -15,6 +15,9 @@ const BULLET_SCENE := preload("res://scenes/bullets/Bullet.tscn")
 const EXPLOSION_SCENE := preload("res://scenes/fx/Explosion.tscn")
 const KITAMAEBUNE_TEX := preload("res://assets/sprites/player_kitamaebune.png")
 const KITAMAEBUNE_WIDTH := 56.0
+## フォーカス機の大きさ。通常機より少し大きく、当たり判定も同じ倍率で大きくなる。
+## 移動速度低下と合わせた枷(ワイドの3.5倍ほどではない)。
+const FOCUS_SCALE := 1.25
 
 @onready var _visual: Sprite2D = $Visual
 @onready var _muzzle: Marker2D = $Muzzle
@@ -63,7 +66,7 @@ func _physics_process(delta: float) -> void:
 	if _anim_t >= 0.08:
 		_anim_t = 0.0
 		_anim_f = 1 - _anim_f
-		if GameState.ship_mode != GameState.ShipMode.WIDE:
+		if GameState.ship_mode == GameState.ShipMode.NORMAL:
 			_visual.texture = PixelArt.get_tex("player" + str(_anim_f))
 
 # --- デモ AI ---
@@ -268,9 +271,15 @@ func _on_ship_mode(mode: int) -> void:
 			var hb := _base_hitbox * (KITAMAEBUNE_WIDTH / 16.0)
 			_col_shape.size = Vector2(hb, hb)
 		return
+	_visual.self_modulate = Color(1, 1, 1)
+	if mode == GameState.ShipMode.FOCUS:
+		# 専用の細身の機体。通常機より一回り大きく、当たり判定も同じだけ大きい
+		_visual.texture = PixelArt.get_tex("player_focus")
+		_visual.scale = Vector2(FOCUS_SCALE, FOCUS_SCALE)
+		if _col_shape:
+			_col_shape.size = Vector2(_base_hitbox, _base_hitbox) * FOCUS_SCALE
+		return
 	_visual.scale = Vector2(1, 1)
 	_visual.texture = PixelArt.get_tex("player" + str(_anim_f))
 	if _col_shape:
 		_col_shape.size = Vector2(_base_hitbox, _base_hitbox)
-	# フォーカスは見た目でも分かるよう色を変える(移動が鈍いことの手がかり)
-	_visual.self_modulate = Color(0.75, 0.9, 1.0) if mode == GameState.ShipMode.FOCUS else Color(1, 1, 1)

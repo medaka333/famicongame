@@ -48,6 +48,29 @@ const PBULLET2 := [
 const EBULLET := [
 	"........", "..OOOO..", ".OOMMOO.", ".OMMMMO.", ".OMMMMO.", ".OOMMOO.", "..OOOO..", "........",
 ]
+# フォーカス船。通常機より細身で、正面に伸びる青いコアを持つ「集中」の形。
+# 通常機(PLAYER0)は翼が広いのに対し、こちらは縦に長い。
+const PLAYER_FOCUS := [
+	".......WW.......", ".......BB.......", "......WBBW......", "......WBBW......",
+	"......WBBW......", ".....WCBBCW.....", ".....WCBBCW.....", "....WCCBBCCW....",
+	"....WCCBBCCW....", "...WCCCBBCCCW...", "...WCCCBBCCCW...", "..WW.CCBBCC.WW..",
+	".WW..WCBBCW..WW.", "WW...RRBBRR...WW", "......RRRR......", ".......RR.......",
+]
+
+# アイテム: 種類が一目で分かるよう F / W の文字を入れる(#10)
+const ITEM_FOCUS := [
+	"................", "..BBBBBBBBBBBB..", "..BCCCCCCCCCCB..", "..BCCCCCCCCCCB..",
+	"..BCCWWWWWWCCB..", "..BCCWWCCCCCCB..", "..BCCWWWWWCCCB..", "..BCCWWCCCCCCB..",
+	"..BCCWWCCCCCCB..", "..BCCWWCCCCCCB..", "..BCCCCCCCCCCB..", "..BCCCCCCCCCCB..",
+	"..BBBBBBBBBBBB..", "................", "................", "................",
+]
+const ITEM_WIDE := [
+	"................", "..RRRRRRRRRRRR..", "..ROOOOOOOOOOR..", "..ROOOOOOOOOOR..",
+	"..ROOWOOOOWOOR..", "..ROOWOOOOWOOR..", "..ROOWOOOOWOOR..", "..ROOWOWWOWOOR..",
+	"..ROOWOWWOWOOR..", "..ROOWWOOWWOOR..", "..ROOOOOOOOOOR..", "..ROOOOOOOOOOR..",
+	"..RRRRRRRRRRRR..", "................", "................", "................",
+]
+
 const ITEM := [
 	"................", "....GGGGGGGG....", "...GGGGGGGGGG...", "..GGWWWWWWWWGG..",
 	"..GGWWGGGGWWGG..", "..GGWWGGGGWWGG..", "..GGWWWWWWWGGG..", "..GGWWGGGGGGGG..",
@@ -115,6 +138,9 @@ var _cache: Dictionary = {}
 func _ready() -> void:
 	_cache["player0"] = _make(PLAYER0)
 	_cache["player1"] = _make(PLAYER1)
+	_cache["player_focus"] = _make(PLAYER_FOCUS)
+	_cache["item_focus"] = _make(ITEM_FOCUS)
+	_cache["item_wide"] = _make(ITEM_WIDE)
 	_cache["zako_red0"] = _make(ZAKO0)
 	_cache["zako_red1"] = _make(ZAKO1)
 	_cache["zako_purple0"] = _make(_recolor(ZAKO0, "R", "P"))
