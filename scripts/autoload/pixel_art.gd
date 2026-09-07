@@ -50,11 +50,17 @@ const EBULLET := [
 ]
 # フォーカス船。通常機より細身で、正面に伸びる青いコアを持つ「集中」の形。
 # 通常機(PLAYER0)は翼が広いのに対し、こちらは縦に長い。
-const PLAYER_FOCUS := [
-	".......WW.......", ".......BB.......", "......WBBW......", "......WBBW......",
-	"......WBBW......", ".....WCBBCW.....", ".....WCBBCW.....", "....WCCBBCCW....",
-	"....WCCBBCCW....", "...WCCCBBCCCW...", "...WCCCBBCCCW...", "..WW.CCBBCC.WW..",
-	".WW..WCBBCW..WW.", "WW...RRBBRR...WW", "......RRRR......", ".......RR.......",
+# フォーカス機(#10)。重厚な砲艦。左16列だけ描いて _mirror_h で32幅にする。
+# 通常機を引き伸ばすとドットの粒が他の絵と揃わないので、32x32で描き起こしている。
+const PLAYER_FOCUS_L := [
+	".......KWK....", ".......KBK....", ".......KBK....", ".......KBK..KC",
+	".......KBK..KC", ".......KBK.KCC", ".......KBK.KCC", ".......KBKKCCC",
+	"......KKBKKCCC", "......KBBBKCCC", ".....KKBBBKCWW", ".....KCBBBKCWW",
+	"....KKCBBBKCWW", "....KCCBBBKCWW", "...KKCCBBBKCWW", "...KCCCBBBKCCC",
+	"..KKCCCBBBKCCC", "KKKCCCCBBBKCCC", "KCCCCCCBBBKCCC", "KCKKCCCBBBKCCC",
+	"KCKKCCCBBBKCCC", "KCCCCCCBBBKCCC", "KKKKKKKBBBKCCC", "...KKCCBBBKCCC",
+	"...KCCCBBBKCCC", "...KCCCBBBKCCC", "...KCCCBBBKCCC", "...KKKKKKKKKKK",
+	"....KOOOK..KOO", ".....OOO....OO", ".....YY.....YY", "......Y......Y",
 ]
 
 # アイテム: 種類が一目で分かるよう F / W の文字を入れる(#10)
@@ -138,7 +144,7 @@ var _cache: Dictionary = {}
 func _ready() -> void:
 	_cache["player0"] = _make(PLAYER0)
 	_cache["player1"] = _make(PLAYER1)
-	_cache["player_focus"] = _make(PLAYER_FOCUS)
+	_cache["player_focus"] = _make(_mirror_h(PLAYER_FOCUS_L))
 	_cache["item_focus"] = _make(ITEM_FOCUS)
 	_cache["item_wide"] = _make(ITEM_WIDE)
 	_cache["zako_red0"] = _make(ZAKO0)

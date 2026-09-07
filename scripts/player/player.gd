@@ -19,7 +19,9 @@ const KITAMAEBUNE_TEX := preload("res://assets/sprites/player_kitamaebune.png")
 const KITAMAEBUNE_WIDTH := 50.4
 ## フォーカス機の大きさ。通常機より少し大きく、当たり判定も同じ倍率で大きくなる。
 ## 移動速度低下と合わせた枷(ワイドの3.5倍ほどではない)。
-const FOCUS_SCALE := 1.25
+## フォーカス機の表示幅。当たり判定もこの幅から算出される(ワイドと同じ規則)。
+## 絵が28pxで描いてあるので28.0なら等倍表示。判定は 4.0 * (28/16) = 7.0。
+const FOCUS_WIDTH := 28.0
 
 @onready var _visual: Sprite2D = $Visual
 @onready var _muzzle: Marker2D = $Muzzle
@@ -152,8 +154,8 @@ func _shoot() -> void:
 	match GameState.ship_mode:
 		GameState.ShipMode.FOCUS:
 			# 正面集中。全弾がボスに当たるのでボス戦に強い(実測で2面ボス12.8秒)
-			_spawn(bullets, _muzzle.global_position + Vector2(-4, 0), Vector2(0, -300))
-			_spawn(bullets, _muzzle.global_position + Vector2(4, 0), Vector2(0, -300))
+			_spawn(bullets, _muzzle.global_position + Vector2(-5.5, 0), Vector2(0, -300))
+			_spawn(bullets, _muzzle.global_position + Vector2(5.5, 0), Vector2(0, -300))
 		GameState.ShipMode.WIDE:
 			# 広角。通常の距離(y=180前後)では斜め弾がボスに当たらないので、
 			# ボス戦はフォーカスに劣る(実測で2面ボス15.9秒)。かわりにザコ掃討が速い。
@@ -275,11 +277,14 @@ func _on_ship_mode(mode: int) -> void:
 		return
 	_visual.self_modulate = Color(1, 1, 1)
 	if mode == GameState.ShipMode.FOCUS:
-		# 専用の細身の機体。通常機より一回り大きく、当たり判定も同じだけ大きい
-		_visual.texture = PixelArt.get_tex("player_focus")
-		_visual.scale = Vector2(FOCUS_SCALE, FOCUS_SCALE)
+		# 重厚な砲艦。通常機の倍の大きさで、当たり判定も倍になる(正面集中の代償)
+		var tex := PixelArt.get_tex("player_focus")
+		_visual.texture = tex
+		var fs := FOCUS_WIDTH / tex.get_width()
+		_visual.scale = Vector2(fs, fs)
 		if _col_shape:
-			_col_shape.size = Vector2(_base_hitbox, _base_hitbox) * FOCUS_SCALE
+			var fhb := _base_hitbox * (FOCUS_WIDTH / 16.0)
+			_col_shape.size = Vector2(fhb, fhb)
 		return
 	_visual.scale = Vector2(1, 1)
 	_visual.texture = PixelArt.get_tex("player" + str(_anim_f))
