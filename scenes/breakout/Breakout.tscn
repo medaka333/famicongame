@@ -122,8 +122,9 @@ theme_override_constants/outline_size = 4
 offset_left = 8.0
 offset_top = 118.0
 offset_right = 248.0
-offset_bottom = 136.0
-text = "Ｊで ボールを はなそう"
+offset_bottom = 154.0
+text = "○/Ａボタンで
+ボールを はなそう"
 horizontal_alignment = 1
 
 [node name="Skip" type="Label" parent="HUD/Tutorial"]
