@@ -55,7 +55,7 @@ var diff_params := {
 	## 大きく・連射を速く・ザコとボスを大きくして当てやすくし、ボスはHPと攻撃の頻度でゆるめる。
 	## 河村さんが候補3つを遊び比べて決めた(2026-10-22)。それ以外はこどもと同じ。
 	Diff.TODDLER: {"lives": 5, "bullet": 0.6, "boss": 0.6, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0,
-			"shot_size": 1.5, "fire": 0.75, "zako_size": 1.5, "boss_size": 1.5, "boss_fire": 1.5},
+			"shot_size": 1.5, "fire": 0.85, "zako_size": 1.5, "boss_size": 1.5, "boss_fire": 1.5},
 }
 
 func _param(key: String) -> Variant:
