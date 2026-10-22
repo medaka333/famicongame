@@ -16,7 +16,9 @@ signal stage_changed(stage_num: int)
 signal stage_cleared
 signal all_clear
 
-enum Diff { KIDS, ADULT }
+## TODDLER(ちびっこ)は末尾に足す。KIDS=0/ADULT=1 の値はブロック崩しのタイトルが
+## 選択位置をそのまま代入しているので動かさない。
+enum Diff { KIDS, ADULT, TODDLER }
 
 ## 船のモード(#10)。以前は power_level 0/1/2 の直線的な強化ラダーだったが、
 ## Lv2がLv1の上位互換になり「火力の倍率」でしか調整できなかった。
@@ -34,26 +36,31 @@ var lives: int = 3
 var ship_mode: int = ShipMode.NORMAL
 
 # --- 難易度パラメータ（KIDS=子供向けにやさしく）---
+## ちびっこ(TODDLER)は今のところこどもと同じ値。「こどもでなければおとな」と書くと
+## TODDLERがおとなの値になってしまうので、やさしい側かどうかはこれで判定する。
+func is_easy() -> bool:
+	return difficulty != Diff.ADULT
+
 func start_lives() -> int:
-	return 5 if difficulty == Diff.KIDS else 3
+	return 5 if is_easy() else 3
 
 func bullet_speed_mul() -> float:
-	return 0.6 if difficulty == Diff.KIDS else 1.0
+	return 0.6 if is_easy() else 1.0
 
 func boss_hp_mul() -> float:
 	# こどものボス戦は9〜16秒しかなく山場として短すぎたため 0.55 -> 0.75 に上げた。
 	# 自機の火力を下げる前は「HPを上げてもLv2には効かずLv0だけ苦しくなる」状態だったが、
 	# Lv2の火力を Lv0比 4.7倍 -> 1.6倍 に是正したことで素直に効くようになった。
-	return 0.75 if difficulty == Diff.KIDS else 1.0
+	return 0.75 if is_easy() else 1.0
 
 func spawn_mul() -> float:
-	return 1.3 if difficulty == Diff.KIDS else 1.0
+	return 1.3 if is_easy() else 1.0
 
 func zako_mul() -> float:
-	return 0.7 if difficulty == Diff.KIDS else 1.0
+	return 0.7 if is_easy() else 1.0
 
 func player_hitbox() -> float:
-	return 4.0 if difficulty == Diff.KIDS else 8.0
+	return 4.0 if is_easy() else 8.0
 
 func max_stages() -> int:
 	# こどもは以前2面だったが、回避AIによる実測で1プレイ42秒とすぐ終わってしまい

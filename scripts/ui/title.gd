@@ -1,5 +1,8 @@
 extends Node2D
-## タイトル（M14・日本語）。KIDS/ADULT 選択 + 操作説明 + 放置デモ。
+## タイトル（M14・日本語）。TODDLER/KIDS/ADULT 選択 + 操作説明 + 放置デモ。
+
+## 上からの並び順。選択位置 _sel はこの配列の添字で、Diff の値そのものではない。
+const MODES := [GameState.Diff.TODDLER, GameState.Diff.KIDS, GameState.Diff.ADULT]
 
 var _sel: int = 0
 var _idle: float = 0.0
@@ -17,8 +20,9 @@ func _ready() -> void:
 	_blink()
 
 func _refresh() -> void:
-	$KidsLabel.text = ("> " if _sel == 0 else "  ") + "こども（やさしい）"
-	$AdultLabel.text = ("> " if _sel == 1 else "  ") + "おとな（むずかしい）"
+	$ToddlerLabel.text = ("> " if _sel == 0 else "  ") + "ちびっこ（とってもやさしい）"
+	$KidsLabel.text = ("> " if _sel == 1 else "  ") + "こども（やさしい）"
+	$AdultLabel.text = ("> " if _sel == 2 else "  ") + "おとな（むずかしい）"
 
 func _process(delta: float) -> void:
 	_input_lock = maxf(_input_lock - delta, 0.0)
@@ -50,7 +54,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and event.physical_keycode == KEY_C:
 		get_tree().change_scene_to_file("res://scenes/ui/KeyConfig.tscn")
 	elif event.is_action_pressed("move_up") or event.is_action_pressed("move_down"):
-		_sel = 1 - _sel
+		var step := -1 if event.is_action_pressed("move_up") else 1
+		_sel = wrapi(_sel + step, 0, MODES.size())
 		_refresh()
 		AudioManager.play_se("cursor")
 	# 以前は or event.is_action_pressed("ui_select_start") が付いていたが、
@@ -59,5 +64,5 @@ func _unhandled_input(event: InputEvent) -> void:
 	# パッドのSTARTは pause に割り当てられており、この画面では「戻る」の意味なので
 	# 決定と衝突する。STARTでの決定は諦めて参照を消した。
 	elif event.is_action_pressed("shoot"):
-		GameState.difficulty = _sel
+		GameState.difficulty = MODES[_sel]
 		get_tree().change_scene_to_file("res://scenes/game/Game.tscn")
