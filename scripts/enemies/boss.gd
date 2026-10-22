@@ -56,9 +56,9 @@ func _physics_process(delta: float) -> void:
 	# 時間経過でもフェーズを上げる。低火力で長引くほど厳しくなり、
 	# 「時間をかけるほど難しくなる」時間ペナルティになる(HPによる移行は据え置き)。
 	_age += delta
-	if _phase < 2 and _age >= PHASE_TIME[0]:
+	if _can_reach(2) and _age >= PHASE_TIME[0]:
 		_advance_phase(2)
-	elif _phase < 3 and _age >= PHASE_TIME[1]:
+	elif _can_reach(3) and _age >= PHASE_TIME[1]:
 		_advance_phase(3)
 	_fire_t -= delta
 	if _fire_t <= 0.0:
@@ -156,12 +156,16 @@ func take_damage(amount: int) -> void:
 	GameState.boss_hp_changed.emit(maxi(_hp, 0), _max_hp)
 	get_tree().call_group("game", "add_shake", 0.05)
 	_flash()
-	if _hp <= _max_hp * 2 / 3 and _phase < 2:
+	if _hp <= _max_hp * 2 / 3 and _can_reach(2):
 		_advance_phase(2)
-	if _hp <= _max_hp / 3 and _phase < 3:
+	if _hp <= _max_hp / 3 and _can_reach(3):
 		_advance_phase(3)
 	if _hp <= 0:
 		_die()
+
+## まだその段階に上がっておらず、モードの上限(ちびっこは2段階まで)を超えないか
+func _can_reach(n: int) -> bool:
+	return _phase < n and n <= GameState.boss_max_phase()
 
 func _advance_phase(n: int) -> void:
 	_phase = n

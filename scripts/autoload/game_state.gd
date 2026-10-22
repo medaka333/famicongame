@@ -43,19 +43,24 @@ var ship_mode: int = ShipMode.NORMAL
 ##   shot_size=自機の弾の大きさの倍率 fire=自機の連射間隔の倍率(小さいほど速い)
 ##   zako_size=ザコの大きさの倍率(見た目と当たり判定) boss_size=ボスの大きさの倍率(同)
 ##   boss_fire=ボスの攻撃間隔の倍率(大きいほどゆるい)
+##   zako_max_hp=ザコのHPの上限 boss_max_phase=ボスの攻撃が何段階目まで上がるか
 ## boss: こどものボス戦は9〜16秒しかなく山場として短すぎたため 0.55 -> 0.75 に上げた。
 ## 自機の火力を下げる前は「HPを上げてもLv2には効かずLv0だけ苦しくなる」状態だったが、
 ## Lv2の火力を Lv0比 4.7倍 -> 1.6倍 に是正したことで素直に効くようになった。
 var diff_params := {
 	Diff.KIDS:    {"lives": 5, "bullet": 0.6, "boss": 0.75, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0,
-			"shot_size": 1.0, "fire": 1.0, "zako_size": 1.0, "boss_size": 1.0, "boss_fire": 1.0},
+			"shot_size": 1.0, "fire": 1.0, "zako_size": 1.0, "boss_size": 1.0, "boss_fire": 1.0,
+			"zako_max_hp": 99, "boss_max_phase": 3},
 	Diff.ADULT:   {"lives": 3, "bullet": 1.0, "boss": 1.0,  "spawn": 1.0, "zako": 1.0, "hitbox": 8.0,
-			"shot_size": 1.0, "fire": 1.0, "zako_size": 1.0, "boss_size": 1.0, "boss_fire": 1.0},
+			"shot_size": 1.0, "fire": 1.0, "zako_size": 1.0, "boss_size": 1.0, "boss_fire": 1.0,
+			"zako_max_hp": 99, "boss_max_phase": 3},
 	## ちびっこ: 子どもは「敵に弾を当てる」のが難しそうだった(河村さんの観察)ので、自機の弾を
 	## 大きく・連射を速く・ザコとボスを大きくして当てやすくし、ボスはHPと攻撃の頻度でゆるめる。
+	## 紫のザコも一撃で倒せ、ボスは3段階目(全方向にばらまく一番激しい攻撃)に進まない。
 	## 河村さんが候補3つを遊び比べて決めた(2026-10-22)。それ以外はこどもと同じ。
 	Diff.TODDLER: {"lives": 5, "bullet": 0.6, "boss": 0.6, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0,
-			"shot_size": 1.5, "fire": 0.85, "zako_size": 1.5, "boss_size": 1.5, "boss_fire": 1.5},
+			"shot_size": 1.5, "fire": 0.85, "zako_size": 1.5, "boss_size": 1.5, "boss_fire": 1.5,
+			"zako_max_hp": 1, "boss_max_phase": 2},
 }
 
 func _param(key: String) -> Variant:
@@ -90,6 +95,12 @@ func zako_size() -> float:
 
 func boss_size() -> float:
 	return _param("boss_size")
+
+func zako_max_hp() -> int:
+	return _param("zako_max_hp")
+
+func boss_max_phase() -> int:
+	return _param("boss_max_phase")
 
 func boss_fire_mul() -> float:
 	return _param("boss_fire")

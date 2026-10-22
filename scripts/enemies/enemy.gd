@@ -23,7 +23,7 @@ func _ready() -> void:
 	add_to_group(Const.G_ENEMIES)
 	collision_layer = Const.bit(Const.L_ENEMY)
 	collision_mask = 0
-	_hp = def.max_hp
+	_hp = mini(def.max_hp, GameState.zako_max_hp())   # ちびっこは紫(HP2)も一撃で倒せる
 	_base_x = position.x
 	_fire_t = def.fire_interval if def.fire_interval > 0.0 else INF
 	$Visual.texture = PixelArt.get_tex(def.sprite_name + "0")
