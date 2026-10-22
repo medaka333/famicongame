@@ -13,6 +13,7 @@ func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 	var tex := "pbullet2" if GameState.ship_mode != GameState.ShipMode.NORMAL else "pbullet"
 	$Visual.texture = PixelArt.get_tex(tex)
+	scale = Vector2.ONE * GameState.shot_size()   # 見た目と当たり判定をいっしょに大きくする
 
 func _physics_process(delta: float) -> void:
 	position += velocity * delta

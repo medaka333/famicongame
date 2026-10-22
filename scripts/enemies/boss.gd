@@ -59,7 +59,7 @@ func _physics_process(delta: float) -> void:
 		_advance_phase(3)
 	_fire_t -= delta
 	if _fire_t <= 0.0:
-		_fire_t = _fire_interval()
+		_fire_t = _fire_interval() * GameState.boss_fire_mul()
 		_attack()
 
 func _fire_interval() -> float:

@@ -64,7 +64,7 @@ func _physics_process(delta: float) -> void:
 
 	_fire_timer -= delta
 	if (GameState.is_demo or Input.is_action_pressed("shoot")) and _fire_timer <= 0.0:
-		_fire_timer = FIRE_COOLDOWN[clampi(GameState.ship_mode, 0, 2)]
+		_fire_timer = FIRE_COOLDOWN[clampi(GameState.ship_mode, 0, 2)] * GameState.fire_cooldown_mul()
 		_shoot()
 
 	_anim_t += delta

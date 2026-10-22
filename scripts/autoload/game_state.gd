@@ -40,18 +40,41 @@ var ship_mode: int = ShipMode.NORMAL
 ## TODDLERがおとなの値になってしまうため、モードごとに全項目を書く。
 ##   lives=残機 bullet=敵弾速度の倍率 boss=ボスHPの倍率 spawn=ザコ出現間隔の倍率
 ##   zako=ザコ時間の倍率 hitbox=自機の当たり判定(px)
+##   shot_size=自機の弾の大きさの倍率 fire=自機の連射間隔の倍率(小さいほど速い)
+##   zako_size=ザコの大きさの倍率(見た目と当たり判定) boss_fire=ボスの攻撃間隔の倍率(大きいほどゆるい)
 ## boss: こどものボス戦は9〜16秒しかなく山場として短すぎたため 0.55 -> 0.75 に上げた。
 ## 自機の火力を下げる前は「HPを上げてもLv2には効かずLv0だけ苦しくなる」状態だったが、
 ## Lv2の火力を Lv0比 4.7倍 -> 1.6倍 に是正したことで素直に効くようになった。
 var diff_params := {
-	Diff.KIDS:    {"lives": 5, "bullet": 0.6, "boss": 0.75, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0},
-	Diff.ADULT:   {"lives": 3, "bullet": 1.0, "boss": 1.0,  "spawn": 1.0, "zako": 1.0, "hitbox": 8.0},
-	Diff.TODDLER: {"lives": 8, "bullet": 0.6, "boss": 0.35, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0},
+	Diff.KIDS:    {"lives": 5, "bullet": 0.6, "boss": 0.75, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0,
+			"shot_size": 1.0, "fire": 1.0, "zako_size": 1.0, "boss_fire": 1.0},
+	Diff.ADULT:   {"lives": 3, "bullet": 1.0, "boss": 1.0,  "spawn": 1.0, "zako": 1.0, "hitbox": 8.0,
+			"shot_size": 1.0, "fire": 1.0, "zako_size": 1.0, "boss_fire": 1.0},
+	Diff.TODDLER: TODDLER_CANDIDATES["B"].duplicate(),
 }
-## TODDLER はこどもから残機とボスHPだけを変えた。回避AIで30回ずつ測ると、こどものミスの
-## 大半はボス戦で起き、効いたのはボスHP(0.75 -> 0.35)と残機(5 -> 8)だった。敵弾を遅くする・
-## 当たり判定を小さくする・ザコを減らすはAIの成績をほとんど変えなかった(遅い弾はかえって
-## 避けにくくなった)。目標は「たまにミスするが、だいたい最後まで行ける」(段3)。
+
+## ちびっこの候補(段3・河村さんが遊んで選ぶ。選んだら1つにして、この表と ?chibi= の切り替えは消す)。
+## 子どもは「敵に弾を当てる」のが難しそうだった(河村さんの観察)ので、自機の弾を大きく・連射を速く・
+## ザコを大きくして当てやすくし、ボスはHPと攻撃の頻度でゆるめる。他はこどもと同じ。
+const TODDLER_CANDIDATES := {
+	"A": {"lives": 5, "bullet": 0.6, "boss": 0.6,  "spawn": 1.3, "zako": 0.7, "hitbox": 4.0,
+			"shot_size": 1.5, "fire": 0.75, "zako_size": 1.25, "boss_fire": 1.25},
+	"B": {"lives": 6, "bullet": 0.6, "boss": 0.5,  "spawn": 1.3, "zako": 0.7, "hitbox": 4.0,
+			"shot_size": 2.0, "fire": 0.6,  "zako_size": 1.5,  "boss_fire": 1.5},
+	"C": {"lives": 8, "bullet": 0.6, "boss": 0.35, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0,
+			"shot_size": 2.0, "fire": 0.5,  "zako_size": 1.5,  "boss_fire": 1.75},
+}
+## Web版を ?chibi=A のように開いたときの候補名(タイトルに表示する)。無ければ空(=B)
+var chibi_candidate: String = ""
+
+func _apply_chibi_candidate() -> void:
+	if not OS.has_feature("web"):
+		return
+	var q = JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('chibi') || ''", true)
+	var key := str(q).to_upper()
+	if TODDLER_CANDIDATES.has(key):
+		chibi_candidate = key
+		diff_params[Diff.TODDLER] = TODDLER_CANDIDATES[key].duplicate()
 
 func _param(key: String) -> Variant:
 	return diff_params[difficulty][key]
@@ -73,6 +96,18 @@ func zako_mul() -> float:
 
 func player_hitbox() -> float:
 	return _param("hitbox")
+
+func shot_size() -> float:
+	return _param("shot_size")
+
+func fire_cooldown_mul() -> float:
+	return _param("fire")
+
+func zako_size() -> float:
+	return _param("zako_size")
+
+func boss_fire_mul() -> float:
+	return _param("boss_fire")
 
 func max_stages() -> int:
 	# こどもは以前2面だったが、回避AIによる実測で1プレイ42秒とすぐ終わってしまい
@@ -123,6 +158,7 @@ func lose_life() -> void:
 const SAVE_PATH := "user://save.cfg"
 
 func _ready() -> void:
+	_apply_chibi_candidate()
 	_load()
 	game_over.connect(_save)
 	boss_defeated.connect(_save)
