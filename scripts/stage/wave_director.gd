@@ -90,7 +90,8 @@ func _spawn_boss() -> void:
 	var s := stages[_stage]
 	var boss := BOSS_SCENE.instantiate()
 	boss.setup(int(s.boss_hp * GameState.boss_hp_mul()), s.boss_sprite)
-	boss.position = Vector2(128, 40)
+	# 大きくしたボス(ちびっこ)は上のHPバーにかぶらないよう、大きさの分だけ下げて出す
+	boss.position = Vector2(128, 40.0 + 24.0 * (GameState.boss_size() - 1.0))
 	var c := get_tree().get_first_node_in_group("enemy_container") as Node2D
 	if c:
 		c.add_child(boss)

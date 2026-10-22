@@ -13,8 +13,6 @@ func _ready() -> void:
 	AudioManager.stop_bgm()
 	GameState.difficulty = GameState.Diff.KIDS
 	$HiScoreLabel.text = "ハイスコア  %06d" % GameState.hi_score
-	if GameState.chibi_candidate != "":
-		$HiScoreLabel.text += "   ちびっこ候補%s" % GameState.chibi_candidate
 	if GameState.just_finished_game:
 		GameState.just_finished_game = false
 		_input_lock = 2.0

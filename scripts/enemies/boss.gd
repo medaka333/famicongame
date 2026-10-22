@@ -37,6 +37,7 @@ func _ready() -> void:
 			$Visual.scale = Vector2(s, s)
 	else:
 		$Visual.texture = PixelArt.get_tex(_sprite)
+	scale = Vector2.ONE * GameState.boss_size()   # 見た目と当たり判定をいっしょに大きくする
 	GameState.boss_appeared.emit()
 	GameState.boss_hp_changed.emit(_hp, _max_hp)
 
@@ -44,11 +45,13 @@ func _physics_process(delta: float) -> void:
 	if not _alive:
 		return
 	position.x += _dir * _move_speed * delta
-	if position.x < 30.0:
-		position.x = 30.0
+	# 左右の折り返し位置。大きくしたボスがはみ出さないよう、大きさに合わせて内側に寄せる
+	var margin := 30.0 * GameState.boss_size()
+	if position.x < margin:
+		position.x = margin
 		_dir = 1.0
-	elif position.x > 226.0:
-		position.x = 226.0
+	elif position.x > 256.0 - margin:
+		position.x = 256.0 - margin
 		_dir = -1.0
 	# 時間経過でもフェーズを上げる。低火力で長引くほど厳しくなり、
 	# 「時間をかけるほど難しくなる」時間ペナルティになる(HPによる移行は据え置き)。
