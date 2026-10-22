@@ -35,32 +35,44 @@ var hi_score: int = 0
 var lives: int = 3
 var ship_mode: int = ShipMode.NORMAL
 
-# --- 難易度パラメータ（KIDS=子供向けにやさしく）---
-## ちびっこ(TODDLER)は今のところこどもと同じ値。「こどもでなければおとな」と書くと
-## TODDLERがおとなの値になってしまうので、やさしい側かどうかはこれで判定する。
-func is_easy() -> bool:
-	return difficulty != Diff.ADULT
+# --- 難易度パラメータ（KIDS=子供向けにやさしく・TODDLER=さらにやさしく）---
+## モードごとの値の表。3モードになり「こどもでなければおとな」の書き方では
+## TODDLERがおとなの値になってしまうため、モードごとに全項目を書く。
+##   lives=残機 bullet=敵弾速度の倍率 boss=ボスHPの倍率 spawn=ザコ出現間隔の倍率
+##   zako=ザコ時間の倍率 hitbox=自機の当たり判定(px)
+## boss: こどものボス戦は9〜16秒しかなく山場として短すぎたため 0.55 -> 0.75 に上げた。
+## 自機の火力を下げる前は「HPを上げてもLv2には効かずLv0だけ苦しくなる」状態だったが、
+## Lv2の火力を Lv0比 4.7倍 -> 1.6倍 に是正したことで素直に効くようになった。
+var diff_params := {
+	Diff.KIDS:    {"lives": 5, "bullet": 0.6, "boss": 0.75, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0},
+	Diff.ADULT:   {"lives": 3, "bullet": 1.0, "boss": 1.0,  "spawn": 1.0, "zako": 1.0, "hitbox": 8.0},
+	Diff.TODDLER: {"lives": 8, "bullet": 0.6, "boss": 0.35, "spawn": 1.3, "zako": 0.7, "hitbox": 4.0},
+}
+## TODDLER はこどもから残機とボスHPだけを変えた。回避AIで30回ずつ測ると、こどものミスの
+## 大半はボス戦で起き、効いたのはボスHP(0.75 -> 0.35)と残機(5 -> 8)だった。敵弾を遅くする・
+## 当たり判定を小さくする・ザコを減らすはAIの成績をほとんど変えなかった(遅い弾はかえって
+## 避けにくくなった)。目標は「たまにミスするが、だいたい最後まで行ける」(段3)。
+
+func _param(key: String) -> Variant:
+	return diff_params[difficulty][key]
 
 func start_lives() -> int:
-	return 5 if is_easy() else 3
+	return _param("lives")
 
 func bullet_speed_mul() -> float:
-	return 0.6 if is_easy() else 1.0
+	return _param("bullet")
 
 func boss_hp_mul() -> float:
-	# こどものボス戦は9〜16秒しかなく山場として短すぎたため 0.55 -> 0.75 に上げた。
-	# 自機の火力を下げる前は「HPを上げてもLv2には効かずLv0だけ苦しくなる」状態だったが、
-	# Lv2の火力を Lv0比 4.7倍 -> 1.6倍 に是正したことで素直に効くようになった。
-	return 0.75 if is_easy() else 1.0
+	return _param("boss")
 
 func spawn_mul() -> float:
-	return 1.3 if is_easy() else 1.0
+	return _param("spawn")
 
 func zako_mul() -> float:
-	return 0.7 if is_easy() else 1.0
+	return _param("zako")
 
 func player_hitbox() -> float:
-	return 4.0 if is_easy() else 8.0
+	return _param("hitbox")
 
 func max_stages() -> int:
 	# こどもは以前2面だったが、回避AIによる実測で1プレイ42秒とすぐ終わってしまい
@@ -79,7 +91,8 @@ func reset_run() -> void:
 func add_score(amount: int) -> void:
 	score += amount
 	score_changed.emit(score)
-	if score > hi_score:
+	# 放置デモの得点はハイスコアに入れない(屋台で、誰も遊んでいないのにハイスコアが出てしまうため)
+	if score > hi_score and not is_demo:
 		hi_score = score
 		hiscore_changed.emit(hi_score)
 

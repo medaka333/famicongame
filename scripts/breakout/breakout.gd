@@ -512,7 +512,8 @@ func notify_paddle_touch() -> void:
 
 func add_score(v: int) -> void:
 	score += v
-	if score > hi:
+	# 放置デモの得点はハイスコアに入れない(STG の GameState.add_score と同じ)
+	if score > hi and not GameState.is_demo:
 		hi = score
 		_update_hi()
 	_update_score()
