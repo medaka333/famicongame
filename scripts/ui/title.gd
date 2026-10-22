@@ -20,7 +20,7 @@ func _ready() -> void:
 	_blink()
 
 func _refresh() -> void:
-	$ToddlerLabel.text = ("> " if _sel == 0 else "  ") + "ちびっこ（とってもやさしい）"
+	$ToddlerLabel.text = ("> " if _sel == 0 else "  ") + "ちびっこ（とてもやさしい）"
 	$KidsLabel.text = ("> " if _sel == 1 else "  ") + "こども（やさしい）"
 	$AdultLabel.text = ("> " if _sel == 2 else "  ") + "おとな（むずかしい）"
 
