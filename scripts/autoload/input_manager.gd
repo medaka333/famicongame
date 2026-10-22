@@ -13,11 +13,28 @@ const FAMICOM_NAME_HINT := "BUFFALO"
 
 # 標準パッド(Proコン等)の十字キー = ボタン11〜14
 const DPAD_BUTTONS := {"move_up": 11, "move_down": 12, "move_left": 13, "move_right": 14}
+# 標準パッドの左スティック = 軸0/1。十字キーと同じ操作をスティックでもできるようにする
+# (2026-10-16・河村の依頼。ファミコン風パッドは十字キー自体が軸0/1なので足さない)
+const STICK_AXES := {
+	"move_up": [1, -1.0], "move_down": [1, 1.0],
+	"move_left": [0, -1.0], "move_right": [0, 1.0],
+}
 # ファミコン風パッドの十字キー = 軸0/1（過去の実機キャリブレーションで確認済み）
 const DPAD_AXES := {
 	"move_up": [1, -1.0], "move_down": [1, 1.0],
 	"move_left": [0, -1.0], "move_right": [0, 1.0],
 }
+
+# スティックの遊び。これより浅い倒しは「動かしていない」とみなす(各アクションの deadzone と同じ値)
+const STICK_DEADZONE := 0.5
+
+## 自機の移動方向(長さ0か1)。スティックは倒した方向にそのまま、十字キー・キーボードは8方向。
+## どちらも速さは常に全速(2026-10-16・河村の依頼)。
+## 縦横を別々に判定すると、斜めと認識される範囲が30°しかなく、境目で斜めとまっすぐが
+## 入れ替わってカクつく。円形の遊びで判定して向きだけ取り出すことで、どの角度もなめらかにする。
+func move_vector() -> Vector2:
+	var v := Input.get_vector("move_left", "move_right", "move_up", "move_down", STICK_DEADZONE)
+	return v.normalized() if v != Vector2.ZERO else Vector2.ZERO
 
 func _ready() -> void:
 	Input.joy_connection_changed.connect(_on_joy_changed)
@@ -53,6 +70,13 @@ func _apply_device_bindings(device: int) -> void:
 			var b := InputEventJoypadButton.new()
 			b.button_index = DPAD_BUTTONS[action]
 			_scope(action, device, b)
+			# _scope はこのデバイスの既存割当を消すので、スティックは消したあとに足す
+			var pair: Array = STICK_AXES[action]
+			var m := InputEventJoypadMotion.new()
+			m.axis = pair[0]
+			m.axis_value = pair[1]
+			m.device = device
+			InputMap.action_add_event(action, m)
 
 # 指定デバイスにだけ適用されるジョイパッド入力として、既存のこのデバイス分/
 # 全デバイス共通(wildcard)分のジョイパッドイベントを消してから新しいものを追加する。

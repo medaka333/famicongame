@@ -57,7 +57,8 @@ func _physics_process(delta: float) -> void:
 	if GameState.is_demo:
 		_demo_move(delta)
 	else:
-		var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		# スティックは倒した方向にそのまま・常に全速(InputManager.move_vector の説明を参照)
+		var dir: Vector2 = InputManager.move_vector()
 		position += dir * _current_speed() * delta
 	position = position.clamp(Const.FIELD_MIN, Const.FIELD_MAX)
 

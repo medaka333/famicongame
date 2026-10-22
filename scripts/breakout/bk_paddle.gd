@@ -40,7 +40,8 @@ func _physics_process(delta: float) -> void:
 	if GameState.is_demo:
 		dir = _demo_dir()
 	else:
-		dir = Input.get_axis("move_left", "move_right")
+		# スティックでも十字キーと同じ速さにする(倒した量ではなく「押されたか」で決める・2026-10-16)
+		dir = float(Input.is_action_pressed("move_right")) - float(Input.is_action_pressed("move_left"))
 	position.x = clampf(position.x + dir * SPEED * delta, 8.0 + half_w, 248.0 - half_w)
 
 func _demo_dir() -> float:
